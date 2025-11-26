@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elice Creator AI</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" as="style" href="/src/layout/styles/styles.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#6700e6',
+                dark: '#4a00a3',
+                focus: '#8137ff',
+                text: '#5b00cc',
+                light: '#d6c0ff',
+                lighter: '#e9dfff',
+                lightest: '#f4efff',
+                medium: '#9c68ff',
+              },
+              slate: {
+                50: '#F8F9FA',
+                100: '#f1f5f9',
+                200: '#e2e8f0',
+                300: '#cbd5e1',
+                400: '#94a3b8',
+                500: '#64748b',
+                600: '#475569',
+                700: '#334152',
+                800: '#1e2936',
+                900: '#0f172a',
+                950: '#020617',
+              },
+              red: {
+                50: '#fef2f2',
+                100: '#fee2e2',
+                200: '#fecaca',
+                300: '#fca5a5',
+                400: '#f87171',
+                500: '#ef4444',
+                600: '#dc2626',
+                700: '#b91c1c',
+                800: '#991b1b',
+                900: '#7f1d1d',
+                950: '#450a0a',
+              },
+              green: {
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                200: '#bbf7d0',
+                300: '#86efac',
+                400: '#4ade80',
+                500: '#22c55e',
+                600: '#16a34a',
+                700: '#15803d',
+                800: '#166534',
+                900: '#14532d',
+                950: '#052e16',
+              },
+              sky: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e',
+                950: '#082f49',
+              },
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      ::-webkit-scrollbar { display: none; }
+      body {
+        font-family: 'Pretendard', 'Malgun Gothic', Helvetica, 'Myriad Pro', Arial, sans-serif;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+      @keyframes slideInFromRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+      }
+      .animate-slideInFromRight {
+          animation: slideInFromRight 0.4s ease-out forwards;
+      }
+      @keyframes slideInFromLeft {
+          from {
+              opacity: 0;
+              transform: translateX(-20px);
+          }
+          to {
+              opacity: 1;
+              transform: translateX(0);
+          }
+      }
+      .animate-slideInFromLeft {
+          animation: slideInFromLeft 0.4s ease-out forwards;
+      }
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      .animate-fadeOut {
+        animation: fadeOut 0.4s ease-out forwards;
+      }
+      @keyframes slideOutToLeft {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+      }
+      .animate-slideOutToLeft {
+        animation: slideOutToLeft 0.4s ease-out forwards;
+      }
+      @keyframes slideOutToRight {
+        from {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+      }
+      .animate-slideOutToRight {
+        animation: slideOutToRight 0.4s ease-out forwards;
+      }
+      /* Style overrides for PrismJS to ensure consistency */
+      pre[class*="language-"] {
+        border-radius: 0.5rem; /* 8px */
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+      }
+      .sticky-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+      }
+    </style>
+    <!-- Prism.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prism-theme-one-dark@1.0.0/prism-onedark.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- KaTeX JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css" integrity="sha384-WcoG4HRXMzYzfCgiyfrySxx90XSl2rxY5mnVY5TwtWE6KLrArNKn0T/mOgNL0Mmi" crossorigin="anonymous">
+    <link rel="stylesheet" href="/layout/styles/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/autoloader/prism-autoloader.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.js" integrity="sha384-J+9dG2KMoiR9hqcFao0IBLwxt6zpcyN68IgwzsCSkbreXUjmNVRhPFTssqdSGjwQ" crossorigin="anonymous"></script>
+    <script>
+      window.WebFontConfig = {
+        custom: {
+          families: ['KaTeX_AMS', 'KaTeX_Caligraphic:n4,n7', 'KaTeX_Fraktur:n4,n7',
+            'KaTeX_Main:n4,n7,i4,i7', 'KaTeX_Math:i4,i7', 'KaTeX_Script',
+            'KaTeX_SansSerif:n4,n7,i4', 'KaTeX_Size1', 'KaTeX_Size2', 'KaTeX_Size3',
+            'KaTeX_Size4', 'KaTeX_Typewriter'],
+        },
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.js" integrity="sha256-4O4pS1SH31ZqrSO2A/2QJTVjTPqVe+jnYgOWUVr7EEc=" crossorigin="anonymous"></script>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "prismjs": "https://aistudiocdn.com/prismjs@^1.30.0",
+    "react-markdown": "https://esm.sh/react-markdown@9?external=react",
+    "remark-math": "https://esm.sh/remark-math@6",
+    "rehype-katex": "https://esm.sh/rehype-katex@7",
+    "rehype-prism-plus": "https://esm.sh/rehype-prism-plus@2",
+    "@monaco-editor/react": "https://esm.sh/@monaco-editor/react@4.6.0?external=react",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "jszip": "https://esm.sh/jszip@3.10.1",
+    "file-saver": "https://esm.sh/file-saver@2.0.5",
+    "zustand/": "https://aistudiocdn.com/zustand@^5.0.8/",
+    "zustand": "https://aistudiocdn.com/zustand@^5.0.8",
+    "zod": "https://esm.sh/zod@3",
+    "recharts": "https://esm.sh/recharts@2?external=react"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-50">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

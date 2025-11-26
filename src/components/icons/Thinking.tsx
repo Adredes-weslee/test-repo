@@ -1,0 +1,5 @@
+import React from 'react';
+
+export const Thinking: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M15.5 16.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M8.5 16.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/><path d="M12 9.5c-1.63 0-3.07.82-4 2.05"/><path d="M12 9.5c1.63 0 3.07.82 4 2.05"/><path d="M17.65 13.6c.42-.9.65-1.89.65-2.91 0-4.08-3.32-7.4-7.4-7.4-4.08 0-7.4 3.32-7.4 7.4 0 1.02.23 2.01.65 2.91"/><path d="M17.5 13.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5c-1.38 0-2.5-1.12-2.5-2.5 0-.82.4-1.54 1-2"/><path d="M6.5 13.5c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5c1.38 0-2.5-1.12-2.5-2.5 0-.82-.4-1.54-1-2"/><path d="m14 18.5.5-1"/><path d="m10 18.5-.5-1"/><path d="M12 21v-2"/></svg>
+);
