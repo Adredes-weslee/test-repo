@@ -100,7 +100,7 @@ export const GenerationInputForm: React.FC<GenerationInputFormProps> = ({ onGene
             <div 
                 className="absolute inset-0 px-3 py-2 text-base text-slate-800 border border-transparent pointer-events-none rounded-lg overflow-hidden"
             >
-                <div className="whitespace-pre-wrap text-sm">
+                <div className="whitespace-pre-wrap">
                     <span className="text-transparent">{prompt}</span>
                     <span className="text-slate-400">{suggestion.suggestion.substring(prompt.length)}</span>
                     <span className="ml-2 inline-block bg-slate-200/80 backdrop-blur-sm text-slate-600 text-xs font-sans font-semibold px-2 py-1 rounded-md shadow-sm align-middle">
