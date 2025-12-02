@@ -118,7 +118,7 @@ export const GenerationInputForm: React.FC<GenerationInputFormProps> = ({ onGene
             onKeyDown={handleKeyDown}
             placeholder={isSuggestionVisible ? '' : placeholderText}
             rows={5}
-            className={`text-base caret-primary relative z-10 ${isSuggestionVisible ? 'bg-transparent' : ''}`}
+            className={`!text-base caret-primary relative z-10 ${isSuggestionVisible ? 'bg-transparent' : ''}`}
         />
 
         {/* Loading indicator */}

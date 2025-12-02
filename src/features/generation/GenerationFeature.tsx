@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { LessonPlanViewer } from './components/LessonPlanViewer';
-import { useGeneration } from '../../hooks/useGeneration';
+import { useGeneration } from './hooks';
 import { ConfirmationModal, LoadingSpinner } from '../../components/ui';
 import { CapstoneWorkspace } from './components/capstone/CapstoneWorkspace';
 import { GenerationInputForm } from './components/GenerationInputForm';

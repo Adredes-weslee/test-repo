@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { useGeneration } from '../../../../hooks/useGeneration';
+import type { useGeneration } from '../../hooks';
 import { LoadingSpinner } from '../../../../components/ui';
 import { ConfigurationView } from './ConfigurationView';
 import { InteractiveEnvironmentView } from './InteractiveEnvironmentView';
