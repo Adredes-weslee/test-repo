@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "file-saver": "^2.0.5",
     "jszip": "^3.10.1",
+    "pptxgenjs": "^4.0.1",
     "prismjs": "^1.30.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -20,10 +21,11 @@
     "recharts": "^2.12.7",
     "rehype-katex": "7",
     "rehype-prism-plus": "2",
+    "remark-gfm": "^4.0.1",
     "remark-math": "6",
     "vite": "^7.1.12",
-    "zustand": "^5.0.8",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^20",
