@@ -1,5 +1,6 @@
-import { generateLessonPlan, regenerateLessonPart, generateNewLessonPart, generateFullVariedCourseStreamed, getPromptSuggestion } from '../api';
-import type { Curriculum, LessonPlan, GenerationOptions, RegenerationPart, ContentItem, PromptSuggestion } from '../types';
+
+import { generateLessonPlan, regenerateLessonPart, generateNewLessonPart, generateFullVariedCourseStreamed, getPromptSuggestion, generateAndragogicalAnalysis } from '../api';
+import type { Curriculum, LessonPlan, GenerationOptions, RegenerationPart, ContentItem, PromptSuggestion, AndragogicalAnalysis } from '../types';
 
 
 class GenerationService {
@@ -44,6 +45,10 @@ class GenerationService {
 
   getPromptSuggestion(prompt: string, type: 'course' | 'project'): Promise<PromptSuggestion | null> {
     return getPromptSuggestion(prompt, type);
+  }
+
+  analyzeAndragogy(content: string): Promise<AndragogicalAnalysis> {
+    return generateAndragogicalAnalysis(content, 'course');
   }
 }
 

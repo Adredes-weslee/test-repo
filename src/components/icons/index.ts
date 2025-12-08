@@ -1,3 +1,4 @@
+
 export * from './ChevronDown';
 export * from './ChevronLeft';
 export * from './ChevronRight';
@@ -40,3 +41,10 @@ export * from './LogOut';
 export * from './Lock';
 export * from './Mail';
 export * from './TrendingUp';
+export * from './Briefcase';
+export * from './Users';
+export * from './PenTool';
+export * from './LayoutTemplate';
+export * from './Layers';
+export * from './Target';
+export * from './Presentation';

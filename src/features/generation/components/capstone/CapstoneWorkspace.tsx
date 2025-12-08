@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { useGeneration } from '../../hooks';
 import { LoadingSpinner } from '../../../../components/ui';
@@ -16,6 +15,7 @@ export const CapstoneWorkspace: React.FC<UseGenerationReturn> = (props) => {
         loadingMessage,
         capstoneProgress,
         openCancelModal,
+        handleResume,
     } = props;
 
     if (isCapstoneLoading && (capstoneView === 'environment' || capstoneView === 'loading')) {
@@ -45,6 +45,9 @@ export const CapstoneWorkspace: React.FC<UseGenerationReturn> = (props) => {
                 capstoneProgress={props.capstoneProgress}
                 loadingMessage={props.loadingMessage}
                 onCancel={props.openCancelModal}
+                andragogyAnalysis={props.andragogyAnalysis}
+                isAnalyzingAndragogy={props.isAnalyzingAndragogy}
+                onResume={handleResume}
             />;
         case 'environment':
             return <InteractiveEnvironmentView 

@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Curriculum, LessonPlan, GenerationOptions } from '../../../types';
+import type { Curriculum, LessonPlan, GenerationOptions, AndragogicalAnalysis } from '../../../types';
 import type { RegenerationPart } from '../../../types/Regeneration';
 import { getRegenerationPartId } from '../../../types';
-import { LessonNavigator, RegeneratePopover, Button, EditModeFooter } from '../../../components/ui';
+import { LessonNavigator, RegeneratePopover, Button, EditModeFooter, Collapsible } from '../../../components/ui';
 import { SaveContentPopover } from './SaveContentPopover';
 import { PreviewHeader } from '../../../components/content';
-import { Modification, Sparkles } from '../../../components/icons';
+import { Modification, Sparkles, Target, Rocket } from '../../../components/icons';
 import { EditableLesson } from '../../../components/content/EditableLesson';
 import { DuplicateAndVaryModal } from '../../content-library/components/content-viewer/DuplicateAndVaryModal';
+import { AndragogyInfo } from '../../../components/content/AndragogyInfo';
 
 interface LessonPlanViewerProps {
     view: 'idle' | 'loading' | 'results';
@@ -30,6 +31,9 @@ interface LessonPlanViewerProps {
     onDuplicateAndVary: (lessonIndex: number, instructions: string) => Promise<void>;
     isDuplicating: boolean;
     onDiscard: () => void;
+    andragogyAnalysis: AndragogicalAnalysis | null;
+    isAnalyzingAndragogy: boolean;
+    onResume?: () => void;
 }
 
 export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
@@ -53,6 +57,9 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
     onDuplicateAndVary,
     isDuplicating,
     onDiscard,
+    andragogyAnalysis,
+    isAnalyzingAndragogy,
+    onResume,
 }) => {
     const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
     const [animationDirection, setAnimationDirection] = useState<'right' | 'left' | null>(null);
@@ -164,9 +171,11 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
         setIsEditing(false);
     };
 
-    const numLessons = currentCurriculum?.content.lessons.length ?? 0;
+    const numLessons = currentCurriculum?.content?.lessons?.length ?? 0;
     const currentGeneratingLessonIndex = numLessons > 0 ? Math.min(numLessons - 1, Math.floor(progress * numLessons / 100)) : 0;
-    const currentLessonTitleWhileLoading = currentCurriculum?.content.lessons[currentGeneratingLessonIndex] ?? '';
+    const currentLessonTitleWhileLoading = currentCurriculum?.content?.lessons?.[currentGeneratingLessonIndex] ?? '';
+    
+    const isIncomplete = !isGenerating && lessonPlans?.some(plan => plan === null);
 
     return (
         <div className="w-full lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[556px] relative" ref={viewerRef}>
@@ -192,7 +201,7 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
                         showSaveButton={true}
                         showDeleteButton={false}
                         onUpdateCurriculumTitle={onUpdateCurriculumTitle}
-                        saveButtonDisabled={view === 'loading' || isEditing}
+                        saveButtonDisabled={view === 'loading' || isEditing || isIncomplete}
                         showDuplicateButton={false}
                         onDuplicateAndVaryClick={() => handleOpenDuplicateModal(currentLessonIndex)}
                         isEditing={isEditing}
@@ -201,13 +210,37 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
                         editedCurriculumTitle={editedCurriculumTitle}
                         onCurriculumTitleChange={setEditedCurriculumTitle}
                         onDiscard={onDiscard}
+                        lessonPlans={lessonPlans}
                     />
+                    
+                    <Collapsible
+                        title={<div className="flex items-center gap-2 font-semibold text-slate-700"><Target className="w-5 h-5 text-primary" />Andragogical Analysis</div>}
+                        containerClassName="border rounded-lg border-slate-200 mb-6 bg-slate-50/50"
+                        headerClassName="w-full flex justify-between items-center p-4 text-left hover:bg-slate-100/70 transition-colors"
+                        defaultOpen={false}
+                    >
+                        <AndragogyInfo analysis={andragogyAnalysis} isLoading={isAnalyzingAndragogy} />
+                    </Collapsible>
+
                     <SaveContentPopover 
                         isOpen={isSavePopoverOpen}
                         onClose={() => setIsSavePopoverOpen(false)}
                         onSave={handleSaveWithNotes}
                         triggerRef={saveButtonRef}
                     />
+                    
+                    {isIncomplete && onResume && (
+                        <div className="my-4 p-4 bg-orange-50 rounded-lg border border-orange-200 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+                            <div className="flex items-center gap-2 text-sm text-orange-700">
+                                <Sparkles className="w-5 h-5" />
+                                <span className="font-semibold">Generation Paused.</span>
+                                <span>Some lessons are missing. Resume to complete.</span>
+                            </div>
+                            <Button onClick={onResume} icon={Rocket} size="small" className="w-full sm:w-auto">
+                                Resume Generation
+                            </Button>
+                        </div>
+                    )}
                     
                     {isGenerating && (
                         <div className="my-4 p-3 bg-slate-50 rounded-lg border border-slate-200">

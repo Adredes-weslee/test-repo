@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { Curriculum } from '../../../types';
 import { getDifficultyClasses, isDifficultyTag } from '../../../utils';
@@ -27,7 +28,7 @@ export const CurriculumConfig: React.FC<CurriculumConfigProps> = ({ curriculum, 
                 <div>
                     <p className="font-semibold text-slate-800">{curriculum.title}</p>
                     <p className="text-xs text-slate-500 mt-1">
-                        {curriculum.content.lessons.length > 1
+                        {curriculum.content?.lessons?.length > 1
                             ? `Generating for all ${curriculum.content.lessons.length} lessons.`
                             : `Generating for 1 lesson.`
                         }

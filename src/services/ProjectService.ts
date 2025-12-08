@@ -1,11 +1,13 @@
+
 import {
   generateDetailedProjectParts,
   generateProjectFileStructure,
   generateFileContent,
   regenerateProjectFiles,
   regenerateProjectPart,
+  generateAndragogicalAnalysis,
 } from '../api';
-import type { CapstoneProject, ProjectFilesData, DetailedProjectData } from '../types';
+import type { CapstoneProject, ProjectFilesData, DetailedProjectData, AndragogicalAnalysis } from '../types';
 
 class ProjectService {
     generateDetailedProjectParts(
@@ -40,6 +42,10 @@ class ProjectService {
         instructions: string,
     ): Promise<Partial<DetailedProjectData>> {
         return regenerateProjectPart(project, partToRegenerate, instructions);
+    }
+
+    analyzeAndragogy(content: string): Promise<AndragogicalAnalysis> {
+        return generateAndragogicalAnalysis(content, 'project');
     }
 }
 

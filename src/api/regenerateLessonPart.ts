@@ -1,7 +1,11 @@
+
 import { ai } from '../core/api/client';
 import type { Curriculum, LessonPlan, GenerationOptions } from '../types';
 import type { RegenerationPart } from '../types/Regeneration';
-import { exerciseSchema, quizQuestionSchema, lessonOutlineSchema, lessonOutcomeSchema, projectSchema, lessonTitleSchema, curriculumTitleSchema } from './schema';
+import { 
+    exerciseSchema, quizQuestionSchema, lessonOutlineSchema, lessonOutcomeSchema, projectSchema, lessonTitleSchema, curriculumTitleSchema,
+    overviewSchema, learningObjectivesSchema, activationSchema, demonstrationSchema, applicationSchema, integrationSchema, reflectionAndAssessmentSchema
+} from './schema';
 import { cleanAndParseJson } from '../core/utils/jsonUtils';
 import { buildRegenerationPrompt } from './prompts';
 import { 
@@ -11,7 +15,14 @@ import {
     QuizQuestionSchema, 
     ProjectSchema,
     LessonTitleSchema,
-    CurriculumTitleSchema
+    CurriculumTitleSchema,
+    OverviewSchema,
+    LearningObjectivesSchema,
+    ActivationSchema,
+    DemonstrationSchema,
+    ApplicationSchema,
+    IntegrationSchema,
+    ReflectionAndAssessmentSchema
 } from '../types/zod';
 import { z } from 'zod';
 
@@ -24,6 +35,13 @@ const getResponseSchemaForPart = (part: RegenerationPart) => {
         case 'project': return projectSchema;
         case 'title': return lessonTitleSchema;
         case 'curriculumTitle': return curriculumTitleSchema;
+        case 'overview': return overviewSchema;
+        case 'objectives': return learningObjectivesSchema;
+        case 'activation': return activationSchema;
+        case 'demonstration': return demonstrationSchema;
+        case 'application': return applicationSchema;
+        case 'integration': return integrationSchema;
+        case 'reflectionAndAssessment': return reflectionAndAssessmentSchema;
         default: throw new Error('Invalid regeneration part type');
     }
 };
@@ -37,6 +55,13 @@ const getZodSchemaForPart = (part: RegenerationPart) => {
         case 'project': return ProjectSchema;
         case 'title': return LessonTitleSchema;
         case 'curriculumTitle': return CurriculumTitleSchema;
+        case 'overview': return OverviewSchema;
+        case 'objectives': return LearningObjectivesSchema;
+        case 'activation': return ActivationSchema;
+        case 'demonstration': return DemonstrationSchema;
+        case 'application': return ApplicationSchema;
+        case 'integration': return IntegrationSchema;
+        case 'reflectionAndAssessment': return ReflectionAndAssessmentSchema;
         default: throw new Error('Invalid regeneration part type');
     }
 };

@@ -1,13 +1,20 @@
+
 import React from 'react';
-import { Rocket, Terminal, Goal, File as FileIcon, SquareCheckBig } from '../../../../components/icons';
+import { Rocket, Terminal, Goal, File as FileIcon, SquareCheckBig, Lock, Sparkles, Check, Thinking, Eye } from '../../../../components/icons';
 import { Button } from '../../../../components/ui';
 
 const SECTIONS = [
-    { id: 'project-description', label: 'Description', icon: FileIcon },
+    { id: 'project-description', label: 'Brief', icon: FileIcon },
+    { id: 'project-learning-outcomes', label: 'Outcomes', icon: Goal },
     { id: 'project-tech-stack', label: 'Tech Stack', icon: Terminal },
-    { id: 'project-learning-outcomes', label: 'Learning Outcomes', icon: Goal },
     { id: 'project-requirements', label: 'Requirements', icon: SquareCheckBig },
     { id: 'project-deliverables', label: 'Deliverables', icon: Rocket },
+    { id: 'project-evidence', label: 'Evidence', icon: Check },
+    { id: 'project-constraints', label: 'Constraints', icon: Lock },
+    { id: 'project-judgement', label: 'Judgement', icon: Eye },
+    { id: 'project-assessment', label: 'Assessment', icon: Thinking },
+    { id: 'project-participation', label: 'Participation', icon: Goal },
+    { id: 'project-future-oriented', label: 'Future-Oriented', icon: Sparkles },
 ];
 
 interface ProjectStructureNavProps {
@@ -33,7 +40,7 @@ export const ProjectStructureNav: React.FC<ProjectStructureNavProps> = ({ onGene
             <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
                 <nav>
                     <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-3">Project Details</h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                         {SECTIONS.map(({ id, label, icon: Icon }) => (
                             <li key={id}>
                                 <a 
@@ -41,7 +48,7 @@ export const ProjectStructureNav: React.FC<ProjectStructureNavProps> = ({ onGene
                                     onClick={(e) => handleNavClick(e, id)}
                                     className="flex items-center space-x-3 p-2 rounded-md hover:bg-slate-100 hover:text-primary-text transition-colors text-slate-600"
                                 >
-                                    <Icon className="w-5 h-5 text-slate-400" />
+                                    <Icon className="w-4 h-4 text-slate-400" />
                                     <span className="text-sm font-medium">{label}</span>
                                 </a>
                             </li>

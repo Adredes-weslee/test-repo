@@ -1,14 +1,18 @@
+
 import React, { useMemo } from 'react';
-import { Goal, Lesson, Exercise, Quiz, Rocket as Project } from '../icons';
+import { Goal, Lesson, Exercise, Quiz, Sparkles, Eye, PenTool, Briefcase, Thinking, File } from '../icons';
 import type { LessonPlan } from '../../types';
 import { useScrollspy } from '../../hooks/useScrollspy';
 
 const SECTIONS_CONFIG = [
-  { id: 'lesson-outcome', label: 'Outcome', icon: Goal, isPresent: (plan: LessonPlan) => !!plan.lessonOutcome },
-  { id: 'lesson-outline', label: 'Lesson', icon: Lesson, isPresent: (plan: LessonPlan) => !!plan.lessonOutline },
+  { id: 'lesson-overview', label: 'Overview', icon: File, isPresent: (plan: LessonPlan) => !!plan.overview || !!plan.lessonOutcome },
+  { id: 'lesson-activation', label: 'Activation', icon: Sparkles, isPresent: (plan: LessonPlan) => !!plan.activation },
+  { id: 'lesson-demonstration', label: 'Demonstration', icon: Eye, isPresent: (plan: LessonPlan) => !!plan.demonstration || !!plan.lessonOutline },
+  { id: 'lesson-application', label: 'Application', icon: PenTool, isPresent: (plan: LessonPlan) => !!plan.application },
+  { id: 'lesson-integration', label: 'Integration', icon: Briefcase, isPresent: (plan: LessonPlan) => !!plan.integration },
+  { id: 'lesson-reflection', label: 'Feedback', icon: Thinking, isPresent: (plan: LessonPlan) => !!plan.reflectionAndAssessment },
   { id: 'lesson-exercises', label: 'Exercises', icon: Exercise, isPresent: (plan: LessonPlan) => plan.exercises && plan.exercises.length > 0 },
   { id: 'lesson-quiz', label: 'Quiz', icon: Quiz, isPresent: (plan: LessonPlan) => plan.quiz && plan.quiz.questions.length > 0 },
-//   { id: 'lesson-project', label: 'Project', icon: Project, isPresent: (plan: LessonPlan) => !!plan.project?.description },
 ];
 
 interface LessonStructureNavProps {
@@ -20,7 +24,7 @@ export const LessonStructureNav: React.FC<LessonStructureNavProps> = ({ lessonPl
         if (lessonPlan) {
             return SECTIONS_CONFIG.filter(sec => sec.isPresent(lessonPlan));
         }
-        return SECTIONS_CONFIG.filter(sec => ['lesson-outcome', 'lesson-outline', 'lesson-exercises', 'lesson-quiz'].includes(sec.id));
+        return SECTIONS_CONFIG; // Show all skeletons if loading? Or maybe just empty.
     }, [lessonPlan]);
     
     const sectionIds = useMemo(() => visibleSections.map(sec => sec.id), [visibleSections]);
@@ -54,7 +58,7 @@ export const LessonStructureNav: React.FC<LessonStructureNavProps> = ({ lessonPl
                             <a 
                                 href={`#${id}`}
                                 onClick={(e) => handleNavClick(e, id)}
-                                className={`flex items-center space-x-2 p-2 rounded-md text-md transition-colors ${
+                                className={`flex items-center space-x-2 p-2 rounded-md text-sm transition-colors ${
                                     isActive 
                                         ? 'bg-primary-lightest text-primary-text font-semibold' 
                                         : 'text-slate-600 hover:bg-slate-100'

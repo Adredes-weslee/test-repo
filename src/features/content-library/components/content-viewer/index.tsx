@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DeleteConfirmationPopover } from './DeleteConfirmationPopover';
 import { RegeneratePopover, LessonNavigator, EditModeFooter } from '../../../../components/ui';
-import { Eye, Modification } from '../../../../components/icons/index';
+import { Eye } from '../../../../components/icons/index';
 import type { ContentItem, RegenerationPart, LessonPlan } from '../../../../types';
 import { getRegenerationPartId } from '../../../../types';
 import { PreviewHeader, EditableLesson, NotesEditor } from '../../../../components/content';
@@ -53,7 +54,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
     const [editedLessonPlan, setEditedLessonPlan] = useState<LessonPlan | null>(null);
     const [processedRegenIds, setProcessedRegenIds] = useState({ title: -1, curriculumTitle: -1 });
 
-    const currentLesson = selectedContent?.lessons[currentLessonIndex];
+    const currentLesson = selectedContent?.lessons?.[currentLessonIndex];
     const lessonPlan = useMemo(() => currentLesson ? parseLessonPlanMarkdown(currentLesson.content) as LessonPlan : null, [currentLesson]);
     
     // Reset index and edit mode when content item changes
@@ -74,7 +75,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
         if (selectedContent) {
             setEditedCurriculumTitle(selectedContent.name);
         }
-        const title = selectedContent?.lessons[currentLessonIndex]?.title || '';
+        const title = selectedContent?.lessons?.[currentLessonIndex]?.title || '';
         setEditedLessonTitle(title);
         setEditedLessonPlan(lessonPlan || null);
     }, [selectedContent, lessonPlan, currentLessonIndex]);
@@ -202,7 +203,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({
                 onUpdateNotes={onUpdateNotes}
               />
 
-              {selectedContent.lessons.length > 1 && (
+              {selectedContent.lessons?.length > 1 && (
                 <LessonNavigator
                     currentLessonIndex={currentLessonIndex}
                     totalLessons={selectedContent.lessons.length}

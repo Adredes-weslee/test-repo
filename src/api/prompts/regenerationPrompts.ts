@@ -10,6 +10,13 @@ const getPartName = (part: RegenerationPart): string => {
         case 'project': return 'the capstone project';
         case 'title': return 'the lesson title';
         case 'curriculumTitle': return 'the curriculum title';
+        case 'overview': return 'the lesson overview';
+        case 'objectives': return 'the learning objectives';
+        case 'activation': return 'the activation phase';
+        case 'demonstration': return 'the demonstration phase';
+        case 'application': return 'the application phase';
+        case 'integration': return 'the integration phase';
+        case 'reflectionAndAssessment': return 'the reflection and assessment section';
     }
 }
 
@@ -37,30 +44,19 @@ export const buildRegenerationPrompt = (
 ): string => {
     const partName = getPartName(partToRegenerate);
     const isCurriculumTitleRegen = partToRegenerate.type === 'curriculumTitle';
-    const isCapstone = lessonTitle?.toLowerCase().includes('capstone') ?? false;
+    
+    let taskInstructions = instructions.trim()
+        ? `**Task:**\nRegenerate ONLY ${partName}.\n\n**Instructions for Regeneration:**\n"${instructions}"`
+        : `**Task:**\nRegenerate ONLY ${partName} to provide a different version or alternative. The new version should be of similar quality and style but offer a fresh perspective or approach.`;
 
-    let taskInstructions: string;
-
-    if (isCapstone) {
-        if (partToRegenerate.type === 'outline') {
-            taskInstructions = `**Task:**\nRegenerate the lesson outline. Since this is a capstone project, the lesson outline MUST be an empty string (""). Do not generate any content for the outline.`;
-        } else if (partToRegenerate.type === 'title') {
-            const customInstructions = instructions.trim()
-                ? `\n\n**Additional Instructions for Regeneration:**\n"${instructions}"`
-                : '';
-            taskInstructions = `**Task:**\nRegenerate the lesson title. The new title MUST start with the prefix "Capstone Project:".${customInstructions}`;
-        } else {
-            // Default behavior for other parts of a capstone project
-            taskInstructions = instructions.trim()
-                ? `**Task:**\nRegenerate ONLY ${partName}.\n\n**Instructions for Regeneration:**\n"${instructions}"`
-                : `**Task:**\nRegenerate ONLY ${partName} to provide a different version or alternative. The new version should be of similar quality and style but offer a fresh perspective or approach.`;
-        }
-    } else {
-        // Default behavior for non-capstone lessons
-        taskInstructions = instructions.trim()
-            ? `**Task:**\nRegenerate ONLY ${partName}.\n\n**Instructions for Regeneration:**\n"${instructions}"`
-            : `**Task:**\nRegenerate ONLY ${partName} to provide a different version or alternative. The new version should be of similar quality and style but offer a fresh perspective or approach.`;
-    }
+    // Guidelines for new sections
+    if (partToRegenerate.type === 'overview') taskInstructions += `\nInclude Purpose, Real-world relevance, and Links to Course ILOs.`;
+    if (partToRegenerate.type === 'objectives') taskInstructions += `\nUse Bloom's Taxonomy verbs.`;
+    if (partToRegenerate.type === 'activation') taskInstructions += `\nElicit prior knowledge and connect to real problems (Merrill).`;
+    if (partToRegenerate.type === 'demonstration') taskInstructions += `\nShow expert modelling and examples (Merrill).`;
+    if (partToRegenerate.type === 'application') taskInstructions += `\nCreate an authentic task mirroring real practice with scaffolded support (Merrill/Billett).`;
+    if (partToRegenerate.type === 'integration') taskInstructions += `\nApply concepts in a new context, encourage sense-making (Merrill).`;
+    if (partToRegenerate.type === 'reflectionAndAssessment') taskInstructions += `\nInclude Feedback & Judgement Cycle and Reflection questions.`;
 
     const contextPrompt = isCurriculumTitleRegen
         ? `**Full Context:**
@@ -156,11 +152,17 @@ export const buildProjectPartRegenerationPrompt = (
         : `**Task:**\nRegenerate ONLY the \`${String(partToRegenerate)}\` section to provide a different version or alternative. The new version should be of similar quality and style but offer a fresh perspective or approach.`;
 
     const guidelines: Record<string, string> = {
-        detailedDescription: `The 'detailedDescription' must be in markdown format and include sections for "Project Overview", "Scenario", "Core Features", and optionally "Key Technical Considerations".`,
+        detailedDescription: `The 'detailedDescription' is the Project Brief. It must be in markdown format and include sections for "Project Brief", "Scenario", "Core Features", and "Key Technical Considerations".`,
         techStack: `The 'techStack' must be a decisive list of technologies. Do not suggest alternatives.`,
         learningOutcomes: `The 'learningOutcomes' should be a list of 4-6 specific, measurable outcomes.`,
         projectRequirements: `The 'projectRequirements' should be a detailed, itemized list of functional and non-functional requirements.`,
-        deliverables: `The 'deliverables' should be a detailed list of professional-quality deliverables.`
+        deliverables: `The 'deliverables' must include the "Final Artefact" and a "Reflection/Judgement Component".`,
+        constraints: `The 'constraints' should list Tools, Data, Roles, Timeline, and Workplace conditions.`,
+        futureOrientedElement: `The 'futureOrientedElement' should describe an unfamiliar scenario or inquiry-based task.`,
+        participationModel: `The 'participationModel' should describe the Observe-Assist-Perform trajectory.`,
+        evidenceOfLearning: `The 'evidenceOfLearning' should list Artefacts, Demonstrations, and Self-evaluations.`,
+        assessmentFeedback: `The 'assessmentFeedback' MUST include a detailed Marking Rubric formatted as a Markdown table, along with Formative checkpoints and Dialogic reviews.`,
+        judgementCriteria: `The 'judgementCriteria' should list Quality expectations and Observable performance indicators.`
     };
 
     return `You are an expert software architect and instructional designer. You are tasked with regenerating a specific part of a capstone project specification.
@@ -176,6 +178,12 @@ ${JSON.stringify({
     learningOutcomes: project.learningOutcomes,
     projectRequirements: project.projectRequirements,
     deliverables: project.deliverables,
+    constraints: project.constraints,
+    futureOrientedElement: project.futureOrientedElement,
+    participationModel: project.participationModel,
+    evidenceOfLearning: project.evidenceOfLearning,
+    assessmentFeedback: project.assessmentFeedback,
+    judgementCriteria: project.judgementCriteria,
 }, null, 2)}
 \`\`\`
 

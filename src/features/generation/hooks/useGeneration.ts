@@ -1,11 +1,10 @@
-
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useCancellableAction, useLessonPlanApi, useProjectApi, useProjectFileManager } from '../../../hooks';
 import { getDefaultGenerationOptions } from '../../../config';
 import { isDifficultyTag, lessonPlanToMarkdown, updateFileContentInTree } from '../../../utils';
 import { useCurriculumStore, useContentLibraryStore, useToastStore, useNavigationStore } from '../../../store';
 import { generationService, projectService, discoveryService } from '../../../services';
-import type { Curriculum, LessonPlan, GenerationOptions, DetailedProjectData, CapstoneProject, FileNode, RegenerationPart, Exercise } from '../../../types';
+import type { Curriculum, LessonPlan, GenerationOptions, DetailedProjectData, CapstoneProject, FileNode, RegenerationPart, Exercise, AndragogicalAnalysis } from '../../../types';
 
 type GenerationMode = 'idle' | 'course' | 'capstone';
 type ViewState = 'idle' | 'loading' | 'results';
@@ -23,6 +22,10 @@ export const useGeneration = () => {
     const isCancelledRef = useRef(false);
     const [progress, setProgress] = useState(0);
     const navigateTo = useNavigationStore((state) => state.navigateTo);
+
+    // Andragogical Analysis State
+    const [andragogyAnalysis, setAndragogyAnalysis] = useState<AndragogicalAnalysis | null>(null);
+    const [isAnalyzingAndragogy, setIsAnalyzingAndragogy] = useState(false);
 
     // --- Course Generation State & Hooks ---
     const { generatedCurriculum, setGeneratedCurriculum } = useCurriculumStore();
@@ -58,63 +61,126 @@ export const useGeneration = () => {
         setSelectedCurriculum(null);
         setSelectedCapstoneProject(null);
         setStartGenerationImmediately(false);
+        setAndragogyAnalysis(null);
     }, [setGeneratedCurriculum, setStartGenerationImmediately, setSelectedCapstoneProject, setSelectedCurriculum, updateProject]);
 
-    const startCourseGeneration = useCallback(async (curriculum: Curriculum, options: GenerationOptions) => {
+    const startCourseGeneration = useCallback(async (curriculum: Curriculum, options: GenerationOptions, isResume = false) => {
         isCancelledRef.current = false;
         setGenerationMode('course');
         setView('loading');
         setGeneratedCurriculum(curriculum);
         setGenerationDate(new Date().toISOString());
-        setLessonPlans(Array(curriculum.content.lessons.length).fill(null));
+        
+        if (!isResume) {
+            setLessonPlans(Array(curriculum.content.lessons.length).fill(null));
+        }
         setLastGenOptions(options);
+        setAndragogyAnalysis(null);
 
         try {
             setView('results');
-            for await (const { plan, index } of generateAllLessonPlans(curriculum, options)) {
+            let completedPlans: LessonPlan[] = [];
+            // If resuming, pass existing plans
+            const currentPlans = isResume && lessonPlans ? lessonPlans : undefined;
+            
+            for await (const { plan, index } of generateAllLessonPlans(curriculum, options, currentPlans)) {
+                completedPlans[index] = plan;
                 setLessonPlans(prevPlans => {
                     const updatedPlans = [...(prevPlans || [])];
                     updatedPlans[index] = plan;
                     return updatedPlans;
                 });
             }
+            
+            // Trigger Andragogy Analysis if not cancelled and at least one plan exists
+            const allPlansCompleted = completedPlans.every(p => p !== null);
+            if (allPlansCompleted && completedPlans.length > 0) {
+                setIsAnalyzingAndragogy(true);
+                const analysisContext = `Curriculum: ${curriculum.title}\nDescription: ${curriculum.description}\nObjectives: ${curriculum.learningOutcomes.join(', ')}\n\nSample Lesson (${curriculum.content.lessons[0]}):\n${lessonPlanToMarkdown(completedPlans[0])}`;
+                generationService.analyzeAndragogy(analysisContext).then(analysis => {
+                    if (!isCancelledRef.current) setAndragogyAnalysis(analysis);
+                }).finally(() => setIsAnalyzingAndragogy(false));
+            }
+
         } catch (error) {
-            // Error toast is handled inside useLessonPlanApi
+            // Error toast is handled inside useLessonPlanApi.
+            // DO NOT reset state here to allow resumption.
         } finally {
             setSelectedCurriculum(null);
             setStartGenerationImmediately(false);
         }
-    }, [generateAllLessonPlans, setGeneratedCurriculum, setSelectedCurriculum, setStartGenerationImmediately]);
+    }, [generateAllLessonPlans, setGeneratedCurriculum, setSelectedCurriculum, setStartGenerationImmediately, lessonPlans]);
 
-    const startCapstoneGeneration = useCallback(async (project: CapstoneProject) => {
+    const startCapstoneGeneration = useCallback(async (project: CapstoneProject, isResume = false) => {
         isCancelledRef.current = false;
         setGenerationMode('capstone');
+        // Initial view state set to loading, but we will switch to results quickly to show skeletons
         setView('loading');
+        setAndragogyAnalysis(null);
         
         const skeletonProject: CapstoneProject = {
             ...project,
-            detailedDescription: '', techStack: [], learningOutcomes: [],
-            projectRequirements: [], deliverables: [],
+            detailedDescription: '', 
+            techStack: [], 
+            learningOutcomes: [],
+            projectRequirements: [], 
+            deliverables: [],
+            // Initialize all detailed fields to ensure skeletons render correctly
+            constraints: [],
+            futureOrientedElement: '',
+            participationModel: '',
+            evidenceOfLearning: [],
+            assessmentFeedback: '',
+            judgementCriteria: [],
         };
-        updateProject(skeletonProject);
+
+        if (!isResume) {
+            updateProject(skeletonProject);
+        }
         setCapstoneView('configure');
+        
+        // Switch to results view immediately to show the configuration view with skeletons
+        // Use a timeout to allow state updates (updateProject) to propagate
+        setTimeout(() => {
+             if (!isCancelledRef.current) setView('results');
+        }, 0);
 
         try {
-            for await (const { data } of generateDetails(project)) {
+            // Use current active project if resuming, otherwise start from skeleton
+            const projectToProcess = isResume ? project : skeletonProject;
+            let finalProjectState = projectToProcess;
+            
+            for await (const { data } of generateDetails(projectToProcess)) {
                 if (isCancelledRef.current) return;
                 updateProjectPart(data);
+                finalProjectState = { ...finalProjectState, ...data };
             }
-            setView('results');
+            
+            // Trigger Andragogy Analysis
+            setIsAnalyzingAndragogy(true);
+            const analysisContext = `Project Title: ${finalProjectState.title}\nDescription: ${finalProjectState.detailedDescription}\nRequirements: ${finalProjectState.projectRequirements?.join('\n')}\nDeliverables: ${finalProjectState.deliverables?.join('\n')}\nLearning Outcomes: ${finalProjectState.learningOutcomes?.join('\n')}`;
+            projectService.analyzeAndragogy(analysisContext).then(analysis => {
+                if (!isCancelledRef.current) setAndragogyAnalysis(analysis);
+            }).finally(() => setIsAnalyzingAndragogy(false));
+
         } catch (error) {
             // Error toast is handled inside useProjectApi
-            if (!isCancelledRef.current) {
-                confirmCancelAction();
-            }
+            // DO NOT reset state here to allow resumption.
         } finally {
             setSelectedCapstoneProject(null);
         }
-    }, [generateDetails, updateProject, updateProjectPart, setSelectedCapstoneProject, confirmCancelAction]);
+    }, [generateDetails, updateProject, updateProjectPart, setSelectedCapstoneProject]);
     
+    const handleResume = async () => {
+        if (generationMode === 'course') {
+            if (!generatedCurriculum || !lastGenOptions) return;
+            await startCourseGeneration(generatedCurriculum, lastGenOptions, true);
+        } else if (generationMode === 'capstone') {
+            if (!activeProject) return;
+            await startCapstoneGeneration(activeProject, true);
+        }
+    };
+
     // --- Trigger generation from Discovery/Trending ---
     useEffect(() => {
         if (selectedCurriculum && startGenerationImmediately) {
@@ -132,6 +198,14 @@ export const useGeneration = () => {
         if (!prompt.trim() && !file) return;
         
         isCancelledRef.current = false;
+        
+        // Update generation mode immediately to show correct loading text
+        if (type === 'course') {
+            setGenerationMode('course');
+        } else {
+            setGenerationMode('capstone');
+        }
+
         setView('loading');
         setProgress(5);
 
@@ -190,10 +264,19 @@ export const useGeneration = () => {
             console.error("Error in generation:", error);
             if (!isCancelledRef.current) {
                 setView('idle');
+                setGenerationMode('idle'); // Reset generation mode on error
                 setProgress(0);
-                const message = error instanceof Error && error.message.startsWith('JSON_PARSE_ERROR')
-                    ? "The AI returned an unexpected response format. Please try again."
-                    : "Failed to process request. Please try again.";
+                
+                let message = "Failed to process request. Please try again.";
+                if (error instanceof Error) {
+                    if (error.message.startsWith('JSON_PARSE_ERROR')) {
+                        message = "The AI returned an unexpected response format. Please try again.";
+                    } else if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                        message = "The model is overloaded. Please try again later.";
+                    } else {
+                        message = error.message;
+                    }
+                }
                 addToast(message, { type: 'error' });
             }
         }
@@ -213,6 +296,7 @@ export const useGeneration = () => {
                 const newPlans = [...(prevPlans || [])];
                 if (!newPlans[lessonIndex]) return newPlans;
                 let lessonToUpdate = { ...newPlans[lessonIndex]! };
+                
                 if (part.type === 'exercise') {
                     if (!lessonToUpdate.exercises) lessonToUpdate.exercises = [];
                     lessonToUpdate.exercises[part.index] = result as Exercise;
@@ -221,11 +305,26 @@ export const useGeneration = () => {
                     lessonToUpdate.quiz.questions[part.index] = result as LessonPlan['quiz']['questions'][0];
                 } else if (part.type === 'outcome') {
                     lessonToUpdate.lessonOutcome = (result as { lessonOutcome: string }).lessonOutcome;
+                    lessonToUpdate.overview = (result as { lessonOutcome: string }).lessonOutcome; // Legacy sync
                 } else if (part.type === 'outline') {
                     lessonToUpdate.lessonOutline = (result as { lessonOutline: string }).lessonOutline;
+                    lessonToUpdate.demonstration = (result as { lessonOutline: string }).lessonOutline; // Legacy sync
                 } else if (part.type === 'project') {
                     lessonToUpdate.project = result as LessonPlan['project'];
+                } else if (part.type === 'overview') {
+                    lessonToUpdate.overview = (result as { overview: string }).overview;
+                } else if (part.type === 'activation') {
+                    lessonToUpdate.activation = (result as { activation: string }).activation;
+                } else if (part.type === 'demonstration') {
+                    lessonToUpdate.demonstration = (result as { demonstration: string }).demonstration;
+                } else if (part.type === 'application') {
+                    lessonToUpdate.application = (result as { application: string }).application;
+                } else if (part.type === 'integration') {
+                    lessonToUpdate.integration = (result as { integration: string }).integration;
+                } else if (part.type === 'reflectionAndAssessment') {
+                    lessonToUpdate.reflectionAndAssessment = (result as { reflectionAndAssessment: string }).reflectionAndAssessment;
                 }
+
                 newPlans[lessonIndex] = lessonToUpdate;
                 return newPlans;
             });
@@ -321,5 +420,7 @@ export const useGeneration = () => {
         handleCancelGeneration: confirmCancelAction,
         handleGenerateManualProject: () => { /* Stub */ },
         currentCurriculum: generatedCurriculum,
+        andragogyAnalysis, isAnalyzingAndragogy,
+        handleResume
     };
 };

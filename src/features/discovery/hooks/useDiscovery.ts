@@ -149,9 +149,16 @@ export const useDiscovery = () => {
       if (isCancelledRef.current || (error instanceof Error && error.message === "Cancelled")) return;
       console.error("Error generating discovery data:", error);
       
-      const message = error instanceof Error && error.message.startsWith('JSON_PARSE_ERROR')
-        ? "The AI returned a response in an unexpected format. Please try again."
-        : "An unexpected error occurred during discovery. Please try again.";
+      let message = "An unexpected error occurred during discovery. Please try again.";
+      if (error instanceof Error) {
+        if (error.message.startsWith('JSON_PARSE_ERROR')) {
+            message = "The AI returned a response in an unexpected format. Please try again.";
+        } else if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+            message = "The model is overloaded. Please try again later.";
+        } else {
+            message = error.message;
+        }
+      }
       addToast(message, { type: 'error' });
 
       setView('idle');

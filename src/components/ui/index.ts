@@ -22,3 +22,4 @@ export * from './EditModeFooter';
 export * from './MyAccountModal';
 export * from './ToastManager';
 export * from './ResetPasswordModal';
+export * from './AndragogyBadge';

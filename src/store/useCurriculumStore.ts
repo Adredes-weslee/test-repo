@@ -34,6 +34,10 @@ interface CurriculumState {
   setProjectForCourseDiscovery: (project: CapstoneProject | null) => void;
   startCourseDiscovery: boolean;
   setStartCourseDiscovery: (start: boolean) => void;
+
+  // New Slides Context
+  slidesContext: { courseTitle: string; items: { title: string; content: string }[] } | null;
+  setSlidesContext: (context: { courseTitle: string; items: { title: string; content: string }[] } | null) => void;
 }
 
 export const useCurriculumStore = create<CurriculumState>()(
@@ -48,6 +52,7 @@ export const useCurriculumStore = create<CurriculumState>()(
       startProjectDiscovery: false,
       projectForCourseDiscovery: null,
       startCourseDiscovery: false,
+      slidesContext: null,
 
       // Persisted state
       currentCurriculum: null,
@@ -66,6 +71,7 @@ export const useCurriculumStore = create<CurriculumState>()(
       setStartProjectDiscovery: (start) => set({ startProjectDiscovery: start }),
       setProjectForCourseDiscovery: (project) => set({ projectForCourseDiscovery: project }),
       setStartCourseDiscovery: (start) => set({ startCourseDiscovery: start }),
+      setSlidesContext: (context) => set({ slidesContext: context }),
     }),
     {
       name: 'eliceCreatorAICurriculumState',

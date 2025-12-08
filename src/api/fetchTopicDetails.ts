@@ -1,3 +1,4 @@
+
 import { ai } from '../core/api/client';
 import { API_MODELS, appConfig } from '../config';
 import { getTopicDetailsPrompt } from './prompts';
@@ -33,7 +34,14 @@ export const fetchTopicDetails = async (topic: string, timePeriod: string): Prom
     const detailedDescription = response.text;
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
-    const sources = groundingChunks.filter(chunk => chunk.web).map(chunk => ({ web: chunk.web! }));
+    const sources = groundingChunks
+      .filter(chunk => chunk.web?.uri && chunk.web?.title)
+      .map(chunk => ({
+        web: {
+          uri: chunk.web!.uri!,
+          title: chunk.web!.title!,
+        },
+      }));
 
     const details = {
       detailedDescription,

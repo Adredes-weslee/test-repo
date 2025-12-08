@@ -1,8 +1,15 @@
 
 export type RegenerationPart = 
-    | { type: 'outcome' }
-    | { type: 'outline' }
-    | { type: 'project' }
+    | { type: 'outcome' } // Legacy mapping to overview
+    | { type: 'outline' } // Legacy mapping to demonstration
+    | { type: 'project' } // Legacy
+    | { type: 'overview' }
+    | { type: 'objectives' }
+    | { type: 'activation' }
+    | { type: 'demonstration' }
+    | { type: 'application' }
+    | { type: 'integration' }
+    | { type: 'reflectionAndAssessment' }
     | { type: 'title' }
     | { type: 'curriculumTitle' }
     | { type: 'exercise', index: number }

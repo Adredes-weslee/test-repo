@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { projectService } from '../services';
 import type { CapstoneProject, DetailedProjectData, FileNode } from '../types';
@@ -31,7 +30,16 @@ export const useProjectApi = (isCancelledRef: React.MutableRefObject<boolean>) =
             }
         } catch (error) {
             console.error("Error generating project details:", error);
-            addToast("Failed to generate project specifications.", { type: 'error' });
+            
+            let message = "Failed to generate project specifications.";
+            if (error instanceof Error) {
+                if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                    message = "The model is overloaded. Please try again later.";
+                } else {
+                    message = error.message;
+                }
+            }
+            addToast(message, { type: 'error' });
             throw error;
         } finally {
             if (!isCancelledRef.current) {
@@ -76,9 +84,16 @@ export const useProjectApi = (isCancelledRef: React.MutableRefObject<boolean>) =
             }
         } catch (error) {
             console.error("Error generating project environment:", error);
-            const message = error instanceof Error && error.message.startsWith('JSON_PARSE_ERROR')
-                ? "The AI returned an unexpected response. Generation stopped."
-                : "Failed to generate project environment.";
+            let message = "Failed to generate project environment.";
+            if (error instanceof Error) {
+                if (error.message.startsWith('JSON_PARSE_ERROR')) {
+                    message = "The AI returned an unexpected response. Generation stopped.";
+                } else if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                    message = "The model is overloaded. Please try again later.";
+                } else {
+                    message = error.message;
+                }
+            }
             addToast(message, { type: 'error' });
             throw error;
         } finally {
@@ -101,7 +116,16 @@ export const useProjectApi = (isCancelledRef: React.MutableRefObject<boolean>) =
             return fileStructure;
         } catch (error) {
             console.error("Error applying instructions:", error);
-            addToast("Failed to apply instructions.", { type: 'error' });
+            
+            let message = "Failed to apply instructions.";
+            if (error instanceof Error) {
+                if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                    message = "The model is overloaded. Please try again later.";
+                } else {
+                    message = error.message;
+                }
+            }
+            addToast(message, { type: 'error' });
             throw error;
         } finally {
             setIsRegeneratingFiles(false);
@@ -116,7 +140,16 @@ export const useProjectApi = (isCancelledRef: React.MutableRefObject<boolean>) =
             return result;
         } catch (error) {
             console.error(`Error regenerating project part "${String(part)}":`, error);
-            addToast(`Failed to regenerate project ${String(part)}.`, { type: 'error' });
+            
+            let message = `Failed to regenerate project ${String(part)}.`;
+            if (error instanceof Error) {
+                if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                    message = "The model is overloaded. Please try again later.";
+                } else {
+                    message = error.message;
+                }
+            }
+            addToast(message, { type: 'error' });
             throw error;
         } finally {
             setIsRegeneratingPart(null);

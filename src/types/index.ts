@@ -1,3 +1,4 @@
+
 export * from './ContentItem';
 export * from './Curriculum';
 export * from './DiscoveryFilter';
@@ -12,3 +13,4 @@ export * from './CapstoneProject';
 export * from './IndustryTrend';
 export * from './zod';
 export * from './PromptSuggestion';
+export * from './AndragogicalAnalysis';

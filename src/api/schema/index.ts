@@ -1,3 +1,4 @@
+
 export * from './curriculumSchema';
 export * from './trendingTopicsSchema';
 export * from './lessonPlanSchema';
@@ -9,3 +10,4 @@ export * from './filePlanSchema';
 export * from './singleCurriculumSchema';
 export * from './industryTrendsSchema';
 export * from './suggestionSchema';
+export * from './andragogyAnalysisSchema';

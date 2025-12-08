@@ -13,18 +13,24 @@ export const useLessonPlanApi = (isCancelledRef: React.MutableRefObject<boolean>
 
     const generateAllLessonPlans = async function* (
         curriculum: Curriculum,
-        options: GenerationOptions
+        options: GenerationOptions,
+        existingPlans?: (LessonPlan | null)[]
     ): AsyncGenerator<{ plan: LessonPlan; index: number }> {
         setIsLoading(true);
         setProgress(0);
 
         const lessons = curriculum.content.lessons;
         const numLessons = lessons.length;
-        const allPlans: (LessonPlan | null)[] = Array(numLessons).fill(null);
+        const allPlans: (LessonPlan | null)[] = existingPlans ? [...existingPlans] : Array(numLessons).fill(null);
 
         try {
             for (let i = 0; i < numLessons; i++) {
                 if (isCancelledRef.current) throw new Error("Cancelled");
+
+                // Resume Logic: Skip if plan already exists
+                if (existingPlans && existingPlans[i]) {
+                    continue; 
+                }
 
                 const onLessonProgress = (p: number) => {
                     if (isCancelledRef.current) return;
@@ -44,9 +50,17 @@ export const useLessonPlanApi = (isCancelledRef: React.MutableRefObject<boolean>
                 // Don't show toast on cancellation
             } else {
                 console.error("Failed to generate lesson plans:", error);
-                const message = error instanceof Error && error.message.startsWith('JSON_PARSE_ERROR')
-                    ? "The AI returned an unexpected format. Generation stopped."
-                    : "An unexpected error occurred while generating the lesson plan.";
+                
+                let message = "An unexpected error occurred while generating the lesson plan.";
+                if (error instanceof Error) {
+                    if (error.message.startsWith('JSON_PARSE_ERROR')) {
+                        message = "The AI returned an unexpected format. Generation stopped.";
+                    } else if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                        message = "The model is overloaded. Please try again later.";
+                    } else {
+                        message = error.message;
+                    }
+                }
                 addToast(message, { type: 'error' });
             }
             throw error; // Rethrow to be caught by the calling hook
@@ -77,9 +91,17 @@ export const useLessonPlanApi = (isCancelledRef: React.MutableRefObject<boolean>
             return result;
         } catch (error) {
             console.error("Regeneration failed:", error);
-            const message = error instanceof Error && error.message.startsWith('JSON_PARSE_ERROR')
-                ? "The AI returned a response in an unexpected format. Please try again."
-                : "Failed to regenerate content. Please try again.";
+            
+            let message = "Failed to regenerate content. Please try again.";
+            if (error instanceof Error) {
+                if (error.message.startsWith('JSON_PARSE_ERROR')) {
+                    message = "The AI returned a response in an unexpected format. Please try again.";
+                } else if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                    message = "The model is overloaded. Please try again later.";
+                } else {
+                    message = error.message;
+                }
+            }
             addToast(message, { type: 'error' });
             throw error;
         } finally {
@@ -100,9 +122,17 @@ export const useLessonPlanApi = (isCancelledRef: React.MutableRefObject<boolean>
             return result;
         } catch (error) {
             console.error(`Failed to generate new ${partType}:`, error);
-            const message = error instanceof Error && error.message.startsWith('JSON_PARSE_ERROR')
-                ? "The AI returned a response in an unexpected format. Please try again."
-                : `Failed to generate new ${partType}. Please try again.`;
+            
+            let message = `Failed to generate new ${partType}. Please try again.`;
+            if (error instanceof Error) {
+                if (error.message.startsWith('JSON_PARSE_ERROR')) {
+                    message = "The AI returned a response in an unexpected format. Please try again.";
+                } else if (error.message.includes('503') || error.message.toLowerCase().includes('overloaded')) {
+                    message = "The model is overloaded. Please try again later.";
+                } else {
+                    message = error.message;
+                }
+            }
             addToast(message, { type: 'error' });
             throw error;
         }

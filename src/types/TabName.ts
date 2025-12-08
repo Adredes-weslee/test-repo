@@ -1,1 +1,1 @@
-export type TabName = 'Generation' | 'Trending' | 'Library';
+export type TabName = 'Generation' | 'Trending' | 'Library' | 'Slides';

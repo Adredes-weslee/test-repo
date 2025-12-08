@@ -1,5 +1,5 @@
 import React from 'react';
-import { Goal, Lesson, Exercise, Quiz, Rocket as Project } from '../icons';
+import { Goal, Exercise, Quiz, Sparkles, Eye, PenTool, Briefcase, Thinking, File } from '../icons';
 import { LessonStructureNav } from '../content/LessonStructureNav';
 
 const SkeletonBar: React.FC<{ width?: string; height?: string; className?: string }> = ({ width = '100%', height = '1rem', className = '' }) => (
@@ -28,28 +28,81 @@ export const LessonPlanSkeleton: React.FC<LessonContentSkeletonProps> = () => {
         <div className={`flex flex-col md:flex-row gap-8 items-start`}>
             <LessonStructureNav lessonPlan={null} />
             <div className={`flex-1 w-full min-w-0 space-y-6`}>
-                <SkeletonSection icon={Goal} title="Lesson Outcome">
+                
+                {/* 1. Overview */}
+                <SkeletonSection icon={File} title="1. Overview">
+                    <SkeletonBar />
                     <SkeletonBar />
                     <SkeletonBar width="80%" />
                 </SkeletonSection>
-                <SkeletonSection icon={Lesson} title="Lesson">
-                    <SkeletonBar height="1.25rem" width="40%" className="mb-4" />
-                    <SkeletonBar />
-                    <SkeletonBar />
+
+                {/* 2. Learning Objectives */}
+                <SkeletonSection icon={Goal} title="2. Learning Objectives">
                     <SkeletonBar width="90%" />
-                    <SkeletonBar height="1.25rem" width="30%" className="mt-6 mb-4" />
+                    <SkeletonBar width="85%" />
+                    <SkeletonBar width="80%" />
+                </SkeletonSection>
+
+                {/* 3. Activation */}
+                <SkeletonSection icon={Sparkles} title="3. Activation">
                     <SkeletonBar />
                     <SkeletonBar width="95%" />
                 </SkeletonSection>
-                <SkeletonSection icon={Exercise} title="Exercises">
-                    <SkeletonBar height="1.25rem" width="20%" className="mb-4" />
+
+                {/* 4. Demonstration */}
+                <SkeletonSection icon={Eye} title="4. Demonstration">
+                    <SkeletonBar />
+                    <SkeletonBar />
+                    <SkeletonBar width="90%" />
+                    <SkeletonBar height="4rem" width="100%" className="my-2" />
+                    <SkeletonBar width="80%" />
+                </SkeletonSection>
+
+                {/* 5. Application */}
+                <SkeletonSection icon={PenTool} title="5. Application (Core Activity)">
+                    <SkeletonBar />
+                    <SkeletonBar width="95%" />
+                    <SkeletonBar width="90%" />
+                </SkeletonSection>
+
+                {/* 6. Integration */}
+                <SkeletonSection icon={Briefcase} title="6. Integration (Transfer)">
+                    <SkeletonBar />
+                    <SkeletonBar width="85%" />
+                </SkeletonSection>
+
+                {/* 7. Feedback & Reflection */}
+                <SkeletonSection icon={Thinking} title="7. Feedback & Reflection">
                     <SkeletonBar />
                     <SkeletonBar width="90%" />
                 </SkeletonSection>
-                <SkeletonSection icon={Quiz} title="Quiz">
-                    <SkeletonBar height="1.25rem" width="20%" className="mb-4" />
-                    <SkeletonBar />
-                    <SkeletonBar width="90%" />
+
+                {/* 8. Exercises */}
+                <SkeletonSection icon={Exercise} title="8. Exercises">
+                    <div className="space-y-4">
+                        <div>
+                            <SkeletonBar height="1.25rem" width="30%" className="mb-2" />
+                            <SkeletonBar />
+                            <SkeletonBar width="90%" />
+                        </div>
+                        <div>
+                            <SkeletonBar height="1.25rem" width="30%" className="mb-2" />
+                            <SkeletonBar />
+                            <SkeletonBar width="90%" />
+                        </div>
+                    </div>
+                </SkeletonSection>
+
+                {/* 9. Quiz */}
+                <SkeletonSection icon={Quiz} title="9. Quiz">
+                    <div className="space-y-4">
+                        <div>
+                            <SkeletonBar height="1.25rem" width="40%" className="mb-2" />
+                            <SkeletonBar width="60%" className="mb-1" />
+                            <SkeletonBar width="60%" className="mb-1" />
+                            <SkeletonBar width="60%" className="mb-1" />
+                        </div>
+                    </div>
                 </SkeletonSection>
             </div>
         </div>

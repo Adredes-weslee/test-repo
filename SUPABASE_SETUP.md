@@ -41,13 +41,16 @@ CREATE TABLE public.content_items (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   created TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   name TEXT NOT NULL,
+  description TEXT,
   lesson_count INTEGER NOT NULL,
   lesson_duration NUMERIC NOT NULL,
   difficulty TEXT NOT NULL,
   notes TEXT,
   generation_options JSONB NOT NULL,
   lessons JSONB NOT NULL,
-  progress INTEGER
+  progress INTEGER,
+  tags TEXT[] DEFAULT '{}',
+  learning_outcomes TEXT[] DEFAULT '{}'
 );
 
 -- Add comments to columns for clarity and documentation
@@ -55,6 +58,7 @@ COMMENT ON COLUMN public.content_items.id IS 'Unique identifier for each content
 COMMENT ON COLUMN public.content_items.user_id IS 'Foreign key to the user who owns this item';
 COMMENT ON COLUMN public.content_items.created IS 'Timestamp when the item was created';
 COMMENT ON COLUMN public.content_items.name IS 'The name or title of the curriculum';
+COMMENT ON COLUMN public.content_items.description IS 'Brief description of the curriculum';
 COMMENT ON COLUMN public.content_items.lesson_count IS 'Total number of lessons in the curriculum';
 COMMENT ON COLUMN public.content_items.lesson_duration IS 'Duration of each lesson in hours';
 COMMENT ON COLUMN public.content_items.difficulty IS 'Difficulty level (e.g., Beginner, Intermediate)';
@@ -62,6 +66,8 @@ COMMENT ON COLUMN public.content_items.notes IS 'User-added notes for the conten
 COMMENT ON COLUMN public.content_items.generation_options IS 'JSON object of the options used to generate the content';
 COMMENT ON COLUMN public.content_items.lessons IS 'JSON array of lesson objects, each with a title and content';
 COMMENT ON COLUMN public.content_items.progress IS 'Optional progress for items being generated';
+COMMENT ON COLUMN public.content_items.tags IS 'Array of tags associated with the curriculum';
+COMMENT ON COLUMN public.content_items.learning_outcomes IS 'Array of learning outcomes for the curriculum';
 
 -- 1. Enable Row Level Security (RLS) on the table
 -- This is a critical security measure. By default, it blocks all access.
@@ -118,17 +124,22 @@ COMMENT ON COLUMN trending_topics.created_at IS 'Timestamp when the record was c
 
 
 ALTER TABLE trending_topics ENABLE ROW LEVEL SECURITY;
---Allows for all
+--Allows for all to read
 CREATE POLICY "Allow public select" ON trending_topics
 FOR SELECT
 USING (true);
---Inserts and updates only for owner
-CREATE POLICY "Allow insert only for owner" ON trending_topics
+
+-- Allow authenticated users to insert (for demonstration purposes, in prod you might restrict this to admins)
+CREATE POLICY "Allow insert for authenticated" ON trending_topics
 FOR INSERT
-WITH CHECK (auth.uid() = '402664e6-6881-4462-a4b8-0adf3e53a3cc');
-CREATE POLICY "Allow update only for owner" ON trending_topics
+TO authenticated
+WITH CHECK (true);
+
+-- Allow authenticated users to update (for demonstration purposes)
+CREATE POLICY "Allow update for authenticated" ON trending_topics
 FOR UPDATE
-USING (auth.uid() = '402664e6-6881-4462-a4b8-0adf3e53a3cc');
+TO authenticated
+USING (true);
 ```
 
 ---
@@ -139,5 +150,5 @@ After running the script, you can verify the setup:
 
 1.  Go to the **Table Editor** in the Supabase dashboard.
 2.  You should see the `content_items` table.
-3.  Click on the table and check the `Columns` tab to ensure the `user_id` column is present.
+3.  Click on the table and check the `Columns` tab to ensure `description`, `tags`, and `learning_outcomes` columns are present.
 4.  Go to **Authentication** > **Policies**. You should see the `content_items` table with the four new policies for authenticated users enabled.

@@ -1,7 +1,9 @@
+
 import React from 'react';
 import type { LessonPlan, RegenerationPart } from '../../../types';
 import { Quiz } from '../../icons';
-import { MarkdownContent, RegenerateButton } from '../../ui';
+import { MarkdownContent, RegenerateButton, AndragogyBadge } from '../../ui';
+import type { Badge } from '../../ui/AndragogyBadge';
 import { quizQuestionToMarkdown, parseQuizQuestionMarkdown } from '../../../utils/markdownEditorUtils';
 import { GenericListSection, ViewModeRenderHelpers } from './GenericListSection';
 
@@ -16,6 +18,7 @@ interface QuizSectionProps {
     isEditing: boolean;
     editedQuiz: LessonPlan['quiz'];
     onEditChange: (newQuiz: LessonPlan['quiz']) => void;
+    badges?: Badge[];
 }
 
 const renderQuizView = (q: QuizQuestion, index: number, helpers: ViewModeRenderHelpers, onRegenerate?: QuizSectionProps['onRegenerate']) => {
@@ -59,22 +62,25 @@ const renderQuizView = (q: QuizQuestion, index: number, helpers: ViewModeRenderH
     );
 };
 
-export const QuizSection: React.FC<QuizSectionProps> = ({ quiz, editedQuiz, onRegenerate, onEditChange, isEditing, ...props }) => {
+export const QuizSection: React.FC<QuizSectionProps> = ({ quiz, editedQuiz, onRegenerate, onEditChange, isEditing, badges, ...props }) => {
     if ((!quiz || !quiz.questions || quiz.questions.length === 0) && !isEditing) {
         return null;
     }
 
-    const simpleTitle = (
-        <div className="flex items-center space-x-3">
-            <Quiz className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-slate-700">Quiz</span>
-        </div>
-    );
-    
     return (
         <div id="lesson-quiz" className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm relative group scroll-mt-8">
-            <div className="flex justify-between items-center mb-4">
-                {simpleTitle}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center space-x-3">
+                        <Quiz className="w-5 h-5 text-primary" />
+                        <span className="font-semibold text-slate-700">9. Quiz</span>
+                    </div>
+                    {badges && badges.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 ml-8">
+                            {badges.map((b, i) => <AndragogyBadge key={i} badge={b} />)}
+                        </div>
+                    )}
+                </div>
             </div>
             <GenericListSection
                 isEditing={isEditing}

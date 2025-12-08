@@ -1,7 +1,9 @@
+
 import React from 'react';
 import type { Exercise as ExerciseType, RegenerationPart } from '../../../types';
 import { Exercise } from '../../icons';
-import { MarkdownContent, RegenerateButton } from '../../ui';
+import { MarkdownContent, RegenerateButton, AndragogyBadge } from '../../ui';
+import type { Badge } from '../../ui/AndragogyBadge';
 import { exerciseToMarkdown, parseExerciseMarkdown } from '../../../utils/markdownEditorUtils';
 import { GenericListSection, ViewModeRenderHelpers } from './GenericListSection';
 
@@ -14,6 +16,7 @@ interface ExercisesSectionProps {
     isEditing: boolean;
     editedExercises: ExerciseType[];
     onEditChange: (newExercises: ExerciseType[]) => void;
+    badges?: Badge[];
 }
 
 const renderExerciseView = (exercise: ExerciseType, index: number, helpers: ViewModeRenderHelpers, onRegenerate?: ExercisesSectionProps['onRegenerate']) => {
@@ -60,23 +63,26 @@ const renderExerciseView = (exercise: ExerciseType, index: number, helpers: View
     );
 };
 
-export const ExercisesSection: React.FC<ExercisesSectionProps> = ({ exercises, editedExercises, onRegenerate, isEditing, onEditChange, ...props }) => {
+export const ExercisesSection: React.FC<ExercisesSectionProps> = ({ exercises, editedExercises, onRegenerate, isEditing, onEditChange, badges, ...props }) => {
 
     if ((!exercises || exercises.length === 0) && !isEditing) {
         return null;
     }
     
-    const simpleTitle = (
-        <div className="flex items-center space-x-3">
-            <Exercise className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-slate-700">Exercises</span>
-        </div>
-    );
-    
     return (
         <div id="lesson-exercises" className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm relative group scroll-mt-8">
-             <div className="flex justify-between items-center mb-4">
-                {simpleTitle}
+             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-2">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center space-x-3">
+                        <Exercise className="w-5 h-5 text-primary" />
+                        <span className="font-semibold text-slate-700">8. Exercises</span>
+                    </div>
+                    {badges && badges.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 ml-8">
+                            {badges.map((b, i) => <AndragogyBadge key={i} badge={b} />)}
+                        </div>
+                    )}
+                </div>
             </div>
             <GenericListSection
                 isEditing={isEditing}

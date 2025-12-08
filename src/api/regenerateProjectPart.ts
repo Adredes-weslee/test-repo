@@ -7,7 +7,13 @@ import {
     learningOutcomesSchema,
     projectRequirementsSchema,
     techStackSchema,
-    deliverablesSchema
+    deliverablesSchema,
+    constraintsSchema,
+    futureOrientedElementSchema,
+    participationModelSchema,
+    evidenceOfLearningSchema,
+    assessmentFeedbackSchema,
+    judgementCriteriaSchema
 } from './schema';
 import { 
     DetailedDescriptionSchema,
@@ -15,6 +21,12 @@ import {
     ProjectRequirementsSchema,
     TechStackSchema,
     DeliverablesSchema,
+    ConstraintsSchema,
+    FutureOrientedElementSchema,
+    ParticipationModelSchema,
+    EvidenceOfLearningSchema,
+    AssessmentFeedbackSchema,
+    JudgementCriteriaSchema
 } from '../types/zod';
 import { cleanAndParseJson } from '../core/utils/jsonUtils';
 import { buildProjectPartRegenerationPrompt } from './prompts';
@@ -27,7 +39,13 @@ const getResponseSchemaForPart = (part: keyof DetailedProjectData) => {
         case 'learningOutcomes': return learningOutcomesSchema;
         case 'projectRequirements': return projectRequirementsSchema;
         case 'deliverables': return deliverablesSchema;
-        default: throw new Error('Invalid project regeneration part type');
+        case 'constraints': return constraintsSchema;
+        case 'futureOrientedElement': return futureOrientedElementSchema;
+        case 'participationModel': return participationModelSchema;
+        case 'evidenceOfLearning': return evidenceOfLearningSchema;
+        case 'assessmentFeedback': return assessmentFeedbackSchema;
+        case 'judgementCriteria': return judgementCriteriaSchema;
+        default: throw new Error(`Invalid project regeneration part type: ${String(part)}`);
     }
 };
 
@@ -38,7 +56,13 @@ const getZodSchemaForPart = (part: keyof DetailedProjectData) => {
         case 'learningOutcomes': return LearningOutcomesSchema;
         case 'projectRequirements': return ProjectRequirementsSchema;
         case 'deliverables': return DeliverablesSchema;
-        default: throw new Error('Invalid project regeneration part type');
+        case 'constraints': return ConstraintsSchema;
+        case 'futureOrientedElement': return FutureOrientedElementSchema;
+        case 'participationModel': return ParticipationModelSchema;
+        case 'evidenceOfLearning': return EvidenceOfLearningSchema;
+        case 'assessmentFeedback': return AssessmentFeedbackSchema;
+        case 'judgementCriteria': return JudgementCriteriaSchema;
+        default: throw new Error(`Invalid project regeneration part type: ${String(part)}`);
     }
 };
 
@@ -66,7 +90,7 @@ export const regenerateProjectPart = async (
       return zodSchema.parse(parsedJson);
 
   } catch (error) {
-    console.error(`Error regenerating project part (${String(partToRegenerate)}):`, error);
+    console.error(`Error regenerating project part "${String(partToRegenerate)}":`, error);
     throw error;
   }
 };

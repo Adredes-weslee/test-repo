@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Rocket, Goal, Terminal, SquareCheckBig } from '../../../components/icons';
 import { Collapsible, Button } from '../../../components/ui';
@@ -49,7 +50,7 @@ export const ProjectDetailView: React.FC<{ project: CapstoneProject; onGenerate:
                 Use this Project & Generate Assets
             </Button>
 
-            <div className="space-y-2">
+            <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-450px)] pr-2">
                 {project.techStack && project.techStack.length > 0 && (
                     <Section title="Tech Stack" items={project.techStack} icon={Terminal} />
                 )}

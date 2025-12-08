@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTrending } from './hooks/useTrending';
 import { industries, appConfig } from '../../config';
@@ -52,7 +53,7 @@ const TrendingFeature: React.FC = () => {
               </Select>
             </div>
         </div>
-        <div className="flex justify-center flex-wrap gap-2 mt-4 p-2 bg-slate-100 rounded-md">
+        <div className="flex justify-center flex-wrap gap-2 mt-4">
             {timePeriods.map(period => (
                 <Button 
                     key={period} 

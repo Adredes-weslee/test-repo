@@ -1,3 +1,4 @@
+
 import type { LessonPlan, Exercise } from '../types';
 
 const parseExercisesMarkdown = (markdown: string): Exercise[] => {
@@ -6,8 +7,8 @@ const parseExercisesMarkdown = (markdown: string): Exercise[] => {
     const exerciseBlocks = markdown.split('---').map(s => s.trim()).filter(Boolean);
 
     for (const block of exerciseBlocks) {
-        const problemMatch = block.match(/\*\*Problem:\*\*\n([\s\S]*?)\n\n\*\*Hint:\*\*/);
-        const hintMatch = block.match(/\*\*Hint:\*\*\n\*([\s\S]*?)\*\n\n\*\*Answer:\*\*/);
+        const problemMatch = block.match(/\*\*Problem:\*\*\n([\s\S]*?)(\n\n\*\*Hint:\*\*|$)/);
+        const hintMatch = block.match(/\*\*Hint:\*\*\n\*?([\s\S]*?)\*?\n\n\*\*Answer:\*\*/);
         const answerMatch = block.match(/\*\*Answer:\*\*\n`{3}([\s\S]*?)`{3}\n\n\*\*Explanation:\*\*/);
         const explanationMatch = block.match(/\*\*Explanation:\*\*\n([\s\S]*)/);
 
@@ -46,74 +47,147 @@ const parseQuizMarkdown = (markdown: string): LessonPlan['quiz'] => {
     return quiz;
 };
 
-
-const parseProjectMarkdown = (markdown: string): LessonPlan['project'] => {
-    const project: LessonPlan['project'] = { description: '', objective: '', deliverables: [] };
-    if (!markdown.trim()) return project;
-    
-    const descriptionMatch = markdown.match(/\*\*Description:\*\*\n([\s\S]*?)\n\n\*\*Objective:\*\*/);
-    const objectiveMatch = markdown.match(/\*\*Objective:\*\*\n([\s\S]*?)\n\n\*\*Deliverables:\*\*/);
-    const deliverablesMatch = markdown.match(/\*\*Deliverables:\*\*\n([\s\S]*)/);
-    
-    if (descriptionMatch) project.description = descriptionMatch[1].trim();
-    if (objectiveMatch) project.objective = objectiveMatch[1].trim();
-    if (deliverablesMatch) {
-        project.deliverables = deliverablesMatch[1].split('\n').map(d => d.replace(/^- /, '').trim()).filter(Boolean);
-    }
-    
-    return project;
+const parseList = (markdown: string): string[] => {
+    if (!markdown) return [];
+    return markdown.split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace(/^- /, '').trim());
 };
-
 
 /**
  * Parses a markdown string of a lesson plan into its constituent sections.
- * @param markdown - The full markdown string for a lesson plan.
- * @returns An object containing the structured data for each section.
  */
 export const parseLessonPlanMarkdown = (markdown: string): Partial<LessonPlan> => {
     const parsedData: Partial<LessonPlan> = {
-        lessonOutcome: '',
-        lessonOutline: '',
+        overview: '',
+        learningObjectives: [],
+        activation: '',
+        demonstration: '',
+        application: '',
+        integration: '',
+        reflectionAndAssessment: '',
         exercises: [],
         quiz: { questions: [] },
-        project: { description: '', objective: '', deliverables: [] },
+        // Legacy support mapping
+        lessonOutcome: '',
+        lessonOutline: '',
     };
     if (!markdown) return parsedData;
 
-    // Use a regex to find all sections. Add newlines to assist with matching the last section.
-    const sectionRegex = /### (Lesson Outcome|Lesson Outline|Exercises|Quiz|Project)\s*\n\n([\s\S]*?)(?=\n\n###|$)/g;
+    // Split by level 2 headings: matches start of line, ##, optional space, then captures the title
+    const sectionRegex = /^##\s+(.+)$/gm;
     let match;
-    const effectiveMarkdown = markdown + '\n\n';
-    let sectionsFound = false;
+    let lastIndex = 0;
+    let currentHeader = '';
 
-    while ((match = sectionRegex.exec(effectiveMarkdown)) !== null) {
-        sectionsFound = true;
-        const [, sectionName, content] = match;
-        const trimmedContent = content.trim();
+    const sections: { header: string, content: string }[] = [];
 
-        switch (sectionName) {
-            case 'Lesson Outcome':
-                parsedData.lessonOutcome = trimmedContent;
-                break;
-            case 'Lesson Outline':
-                parsedData.lessonOutline = trimmedContent;
-                break;
-            case 'Exercises':
-                parsedData.exercises = parseExercisesMarkdown(trimmedContent);
-                break;
-            case 'Quiz':
-                parsedData.quiz = parseQuizMarkdown(trimmedContent);
-                break;
-            case 'Project':
-                parsedData.project = parseProjectMarkdown(trimmedContent);
-                break;
+    // Find all headers
+    while ((match = sectionRegex.exec(markdown)) !== null) {
+        if (currentHeader) {
+            sections.push({
+                header: currentHeader,
+                content: markdown.substring(lastIndex, match.index).trim()
+            });
         }
+        currentHeader = match[1].trim();
+        lastIndex = match.index + match[0].length;
     }
-    
-    // If no sections were parsed via regex, assume the whole content is the lesson outline.
-    if (!sectionsFound && !markdown.trim().startsWith('###')) {
-         parsedData.lessonOutline = markdown.trim();
+    // Push the last section
+    if (currentHeader) {
+        sections.push({
+            header: currentHeader,
+            content: markdown.substring(lastIndex).trim()
+        });
+    }
+
+    // Fallback: If no ## headers found, try to treat everything as legacy outline/demonstration
+    if (sections.length === 0 && markdown.trim().length > 0) {
+         parsedData.lessonOutline = markdown;
+         parsedData.demonstration = markdown;
+         return parsedData;
+    }
+
+    for (const { header: rawHeader, content } of sections) {
+        // Remove numbering "1. ", "3.1 " etc from the header check
+        const header = rawHeader.toLowerCase().replace(/^\d+(\.\d+)?\s*/, '');
+
+        if (header.includes('overview') || header.includes('lesson overview') || header.includes('lesson outcome')) {
+            parsedData.overview = content;
+            parsedData.lessonOutcome = content; // Legacy sync
+        } else if (header.includes('learning objectives') || header.includes('objectives')) {
+            parsedData.learningObjectives = parseList(content);
+        } else if (header.includes('activation')) {
+            parsedData.activation = content;
+        } else if (header.includes('demonstration')) {
+            parsedData.demonstration = content;
+            parsedData.lessonOutline = content; // Legacy sync
+        } else if (header.includes('application')) {
+            parsedData.application = content;
+        } else if (header.includes('integration')) {
+            parsedData.integration = content;
+        } else if (header.includes('feedback') || header.includes('reflection')) {
+            parsedData.reflectionAndAssessment = content;
+        } else if (header.includes('exercises')) {
+            parsedData.exercises = parseExercisesMarkdown(content);
+        } else if (header.includes('quiz')) {
+            parsedData.quiz = parseQuizMarkdown(content);
+        } else if (header.includes('lesson sequence')) {
+            // Backward compatibility for nested Level 3 headers
+            const subParts = content.split(/^###\s+/gm);
+            for (const sub of subParts) {
+                 const subLines = sub.split('\n');
+                 const subHeaderRaw = subLines[0].trim().toLowerCase().replace(/^\d+(\.\d+)?\s*/, '');
+                 const subContent = subLines.slice(1).join('\n').trim();
+                 if(!subHeaderRaw) continue;
+
+                 if (subHeaderRaw.includes('activation')) parsedData.activation = subContent;
+                 else if (subHeaderRaw.includes('demonstration')) { parsedData.demonstration = subContent; parsedData.lessonOutline = subContent; }
+                 else if (subHeaderRaw.includes('application')) parsedData.application = subContent;
+                 else if (subHeaderRaw.includes('integration')) parsedData.integration = subContent;
+                 else if (subHeaderRaw.includes('feedback') || subHeaderRaw.includes('reflection')) parsedData.reflectionAndAssessment = subContent;
+            }
+        } else if (header.includes('lesson outline')) {
+            // Legacy fallback
+            parsedData.lessonOutline = content;
+            if (!parsedData.demonstration) parsedData.demonstration = content;
+        }
     }
 
     return parsedData;
+};
+
+export const stripMarkdown = (markdown: string): string => {
+    if (!markdown) return '';
+    let text = markdown;
+    
+    // Remove code block fences
+    text = text.replace(/```[\w]*\n?/g, ''); 
+    
+    // Remove images ![alt](url) -> alt
+    text = text.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '$1');
+
+    // Remove links [text](url) -> text
+    text = text.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+
+    // Remove bold/italic (** or __)
+    text = text.replace(/(\*\*|__)(.*?)\1/g, '$2');
+    
+    // Remove italic (* or _)
+    text = text.replace(/(\*|_)(.*?)\1/g, '$2');
+
+    // Remove inline code
+    text = text.replace(/`([^`]+)`/g, '$1');
+
+    // Remove headers
+    text = text.replace(/^#+\s+/gm, '');
+
+    // Remove blockquotes
+    text = text.replace(/^>\s+/gm, '');
+
+    // Remove list markers at start of string (e.g. *, -, +, 1.)
+    text = text.replace(/^[\s\t]*([\*\-\+]|\d+\.)\s+/gm, '');
+    
+    // Remove HTML tags
+    text = text.replace(/<[^>]*>/g, '');
+
+    return text.trim();
 };

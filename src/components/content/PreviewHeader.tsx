@@ -1,9 +1,11 @@
+
 import React, { useRef } from 'react';
-import type { ContentItem, Curriculum, GenerationOptions, RegenerationPart } from '../../types';
+import type { ContentItem, Curriculum, GenerationOptions, RegenerationPart, LessonPlan } from '../../types';
 import { getRegenerationPartId } from '../../types';
 import { IconButton, Input, RegenerateButton, Button } from '../../components/ui';
-import { Modification, Library, Trash, CopyPlus } from '../../components/icons';
-import { formatDate, getDifficultyClasses, isDifficultyTag } from '../../utils';
+import { Modification, Library, Trash, CopyPlus, Presentation } from '../../components/icons';
+import { formatDate, getDifficultyClasses, isDifficultyTag, lessonPlanToMarkdown } from '../../utils';
+import { useNavigationStore, useCurriculumStore } from '../../store';
 
 interface PreviewHeaderProps {
     curriculum: Curriculum | ContentItem;
@@ -27,6 +29,7 @@ interface PreviewHeaderProps {
     editedCurriculumTitle?: string;
     onCurriculumTitleChange?: (newTitle: string) => void;
     onDiscard?: () => void;
+    lessonPlans?: (LessonPlan | null)[] | null;
 }
 
 export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
@@ -51,24 +54,62 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     editedCurriculumTitle,
     onCurriculumTitleChange,
     onDiscard,
+    lessonPlans,
 }) => {
     const curriculumTitleRegenButtonRef = React.useRef<HTMLButtonElement>(null);
+    const navigateTo = useNavigationStore((state) => state.navigateTo);
+    const setSlidesContext = useCurriculumStore((state) => state.setSlidesContext);
 
     const isContentItem = 'created' in curriculum;
-    const difficulty = 'tags' in curriculum ? (curriculum.tags.find(isDifficultyTag) || 'N/A') : curriculum.difficulty;
-    const lessonCount = 'content' in curriculum ? curriculum.content.lessons.length : curriculum.lessonCount;
+    
+    // Correctly resolve difficulty: ContentItem has explicit 'difficulty', Curriculum relies on 'tags'.
+    const difficulty = isContentItem 
+        ? (curriculum as ContentItem).difficulty 
+        : (curriculum.tags?.find(isDifficultyTag) || 'N/A');
+
+    const lessonCount = ('content' in curriculum && curriculum.content) ? curriculum.content.lessons.length : (('lessonCount' in curriculum) ? curriculum.lessonCount : 0);
     const totalHours = generationOptions
         ? lessonCount * parseFloat(generationOptions.lessonDuration)
-        : isContentItem ? curriculum.lessonCount * curriculum.lessonDuration : 0;
-    const date = isContentItem ? curriculum.created : generationDate;
+        : isContentItem ? (curriculum as ContentItem).lessonCount * (curriculum as ContentItem).lessonDuration : 0;
+    const date = isContentItem ? (curriculum as ContentItem).created : generationDate;
     const formattedDate = formatDate(date);
     const dateLabel = isContentItem ? 'Created on' : 'Generated on';
-    const curriculumTitle = 'title' in curriculum ? curriculum.title : curriculum.name;
+    const curriculumTitle = 'title' in curriculum ? curriculum.title : (curriculum as ContentItem).name;
     
     const openCurriculumTitleRegen = () => {
         onRegenerateRequest({ type: 'curriculumTitle' }, curriculumTitleRegenButtonRef);
     };
     const isCurriculumTitleRegenOpen = openPopoverPartId === getRegenerationPartId({ type: 'curriculumTitle' });
+
+    const handleGenerateSlides = () => {
+        // Prepare structured context for slides generation
+        let items: { title: string; content: string }[] = [];
+
+        if (isContentItem) {
+            // If it's a saved item, use the stored lesson content
+            const item = curriculum as ContentItem;
+            items = item.lessons.map(l => ({
+                title: l.title,
+                content: l.content
+            }));
+        } else {
+            // If it's a generation result (Curriculum), try to use lessonPlans if available
+            const curr = curriculum as Curriculum;
+            const lessonTitles = curr.content.lessons;
+            
+            items = lessonTitles.map((title, index) => {
+                const plan = lessonPlans?.[index];
+                const content = plan ? lessonPlanToMarkdown(plan) : 'Content not generated yet.';
+                return { title, content };
+            });
+        }
+
+        setSlidesContext({
+            courseTitle: curriculumTitle,
+            items: items
+        });
+        navigateTo('Slides');
+    };
 
     return (
         <div className="flex justify-between items-start mb-4 pb-4 border-b border-slate-200">
@@ -135,6 +176,16 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
                         variant="default"
                     />
                 )}
+                <Button
+                    icon={Presentation}
+                    variant="secondary"
+                    onClick={handleGenerateSlides}
+                    size="small"
+                    className="!px-3"
+                    disabled={isEditing}
+                >
+                    Generate Slides
+                </Button>
                 {showDuplicateButton && (
                     <Button
                         icon={CopyPlus}

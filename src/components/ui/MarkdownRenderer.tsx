@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import rehypePrism from 'rehype-prism-plus';
 
@@ -9,7 +10,7 @@ export const MarkdownContent: React.FC<{ content: string; }> = React.memo(({ con
     
     return (
         <ReactMarkdown
-            remarkPlugins={[remarkMath]}
+            remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[rehypeKatex, [rehypePrism, { ignoreMissing: true }]]}
             children={content}
             components={{
@@ -28,7 +29,13 @@ export const MarkdownContent: React.FC<{ content: string; }> = React.memo(({ con
                     }
                     // For block code, rehype-prism-plus handles the rendering
                     return <code className={className} {...props}>{children}</code>
-                }
+                },
+                table: ({node, ...props}) => <div className="overflow-x-auto my-4"><table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-lg" {...props} /></div>,
+                thead: ({node, ...props}) => <thead className="bg-slate-50" {...props} />,
+                th: ({node, ...props}) => <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200" {...props} />,
+                tbody: ({node, ...props}) => <tbody className="bg-white divide-y divide-slate-100" {...props} />,
+                tr: ({node, ...props}) => <tr className="hover:bg-slate-50/50 transition-colors" {...props} />,
+                td: ({node, ...props}) => <td className="px-6 py-4 whitespace-normal text-sm text-slate-700" {...props} />,
             }}
         />
     );

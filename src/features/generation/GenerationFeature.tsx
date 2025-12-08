@@ -81,6 +81,8 @@ const GenerationFeature: React.FC = () => {
                             onDuplicateAndVary={hookValues.handleDuplicateAndVary}
                             isDuplicating={hookValues.isDuplicating}
                             onDiscard={openTrashModal}
+                            andragogyAnalysis={hookValues.andragogyAnalysis}
+                            isAnalyzingAndragogy={hookValues.isAnalyzingAndragogy}
                         />
                     </div>
                 );

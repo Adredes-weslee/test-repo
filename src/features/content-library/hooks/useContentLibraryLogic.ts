@@ -148,10 +148,24 @@ export const useContentLibraryLogic = () => {
                 updatedLessonPlan.quiz.questions[part.index] = result as LessonPlan['quiz']['questions'][0];
             } else if (part.type === 'outcome') {
                 updatedLessonPlan.lessonOutcome = (result as { lessonOutcome: string }).lessonOutcome;
+                updatedLessonPlan.overview = (result as { lessonOutcome: string }).lessonOutcome;
             } else if (part.type === 'outline') {
                 updatedLessonPlan.lessonOutline = (result as { lessonOutline: string }).lessonOutline;
+                updatedLessonPlan.demonstration = (result as { lessonOutline: string }).lessonOutline;
             } else if (part.type === 'project') {
                 updatedLessonPlan.project = result as LessonPlan['project'];
+            } else if (part.type === 'overview') {
+                updatedLessonPlan.overview = (result as { overview: string }).overview;
+            } else if (part.type === 'activation') {
+                updatedLessonPlan.activation = (result as { activation: string }).activation;
+            } else if (part.type === 'demonstration') {
+                updatedLessonPlan.demonstration = (result as { demonstration: string }).demonstration;
+            } else if (part.type === 'application') {
+                updatedLessonPlan.application = (result as { application: string }).application;
+            } else if (part.type === 'integration') {
+                updatedLessonPlan.integration = (result as { integration: string }).integration;
+            } else if (part.type === 'reflectionAndAssessment') {
+                updatedLessonPlan.reflectionAndAssessment = (result as { reflectionAndAssessment: string }).reflectionAndAssessment;
             }
 
             handleUpdateLessonPlan(lessonIndex, updatedLessonPlan);
