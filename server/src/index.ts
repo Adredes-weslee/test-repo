@@ -1,6 +1,8 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
+import { adminRouter } from './routes/admin';
+import { orchestrationsRouter } from './routes/orchestrations';
 
 dotenv.config();
 
@@ -26,6 +28,22 @@ app.get('/health', (_req: unknown, res: { json: (body: unknown) => void }) => {
     simulationMode,
   });
 });
+
+app.use('/orchestrations', orchestrationsRouter);
+app.use('/admin', adminRouter);
+
+app.use(
+  (
+    err: unknown,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    console.error(err);
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    res.status(500).json({ ok: false, error: { message } });
+  }
+);
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
