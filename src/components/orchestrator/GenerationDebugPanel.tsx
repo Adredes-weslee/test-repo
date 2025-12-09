@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '../ui';
 
 type GenerationDebugPanelProps = {
@@ -22,16 +22,14 @@ const extractCurriculums = (payload: any): any[] => {
 const buildSummary = (payload: any) => {
     const curriculums = extractCurriculums(payload);
     const first = curriculums[0];
-    const modules = first?.modules || [];
+    const modules = Array.isArray(first?.modules) ? first.modules : [];
 
     return {
         curriculumsCount: curriculums.length,
-        moduleCount: modules.length || 0,
-        lessonsPerModule: Array.isArray(modules)
-            ? modules.map((mod: any) => (Array.isArray(mod?.lessons) ? mod.lessons.length : 0))
-            : [],
+        moduleCount: modules.length,
+        lessonsPerModule: modules.map((mod: any) => (Array.isArray(mod?.lessons) ? mod.lessons.length : 0)),
         curriculumTitle: first?.title ?? 'N/A',
-        moduleTitles: Array.isArray(modules) ? modules.map((mod: any) => mod?.title ?? 'Untitled Module') : [],
+        moduleTitles: modules.map((mod: any) => mod?.title ?? 'Untitled Module'),
     };
 };
 
@@ -42,19 +40,47 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
     onRunDirectCompare,
     isComparing,
 }) => {
+    // Escape-to-close
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const orchestratorSummary = buildSummary(snapshot?.orchestratorOrFinalGeneration);
     const directSummary = buildSummary(snapshot?.directGeneration);
 
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // Only close when clicking the backdrop itself (not the modal content)
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8">
+        <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8"
+            onClick={handleBackdropClick}
+        >
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-auto border border-slate-200">
-                <div className="flex items-center justify-between p-4 border-b border-slate-200">
+                
+                {/* Sticky header so Close never disappears */}
+                <div className="sticky top-0 z-10 bg-white flex items-center justify-between p-4 border-b border-slate-200">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">Generation Debug</h2>
                         {snapshot?.updatedAt && (
-                            <p className="text-xs text-slate-500">Updated: {new Date(snapshot.updatedAt).toLocaleString()}</p>
+                            <p className="text-xs text-slate-500">
+                                Updated: {new Date(snapshot.updatedAt).toLocaleString()}
+                            </p>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -102,7 +128,9 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                         <div>
                             <p className="font-semibold mb-2">Direct Generation</p>
                             <pre className="bg-slate-900 text-slate-100 p-3 rounded text-xs overflow-auto max-h-64">
-                                {snapshot?.directError ? `Error: ${snapshot.directError}` : formatJson(snapshot?.directGeneration)}
+                                {snapshot?.directError
+                                    ? `Error: ${snapshot.directError}`
+                                    : formatJson(snapshot?.directGeneration)}
                             </pre>
                         </div>
                     </div>
@@ -128,9 +156,15 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Optional bottom close for extra safety */}
+                    <div className="pt-2 flex justify-end">
+                        <Button variant="secondary" size="small" onClick={onClose}>
+                            Close
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
-
