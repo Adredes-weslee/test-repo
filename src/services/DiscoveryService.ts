@@ -65,9 +65,14 @@ class DiscoveryService {
           throw new Error('Failed to start curriculum orchestration');
         }
 
+        const startTime = Date.now();
+        const maxWaitTime = 60_000;
         let run = await getOrchestrationStatus(orchestrationId);
 
         while (!isTerminalStatus(run.status)) {
+          if (Date.now() - startTime > maxWaitTime) {
+            throw new Error('Curriculum orchestration timed out after 60 seconds');
+          }
           await awaitNextStatus();
           run = await getOrchestrationStatus(orchestrationId);
         }
