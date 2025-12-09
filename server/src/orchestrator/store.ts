@@ -134,7 +134,7 @@ export class OrchestratorStore {
       agent: input.agent,
       type: input.type,
       message: sanitizeEventMessage(input.message),
-      meta: input.meta,
+      meta: redactPIIDeep(input.meta),
       timestamp: new Date(),
     };
 

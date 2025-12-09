@@ -8,9 +8,10 @@ const MAX_MESSAGE_LENGTH = 500;
 export const sanitizeEventMessage = (message: string): string => {
   const normalized = message.replace(/\s+/g, ' ').trim();
   const redacted = redactPII(normalized);
-  if (redacted.length <= MAX_MESSAGE_LENGTH) {
-    return redacted;
-  }
+  const truncated =
+    redacted.length > MAX_MESSAGE_LENGTH
+      ? `${redacted.slice(0, MAX_MESSAGE_LENGTH - 3)}...`
+      : redacted;
 
-  return `${redacted.slice(0, MAX_MESSAGE_LENGTH - 3)}...`;
+  return truncated;
 };
