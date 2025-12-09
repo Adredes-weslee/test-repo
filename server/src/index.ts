@@ -20,7 +20,7 @@ if (!simulationMode && !process.env.GEMINI_API_KEY) {
   console.warn('Warning: GEMINI_API_KEY is not set.');
 }
 
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: unknown, res: { json: (body: unknown) => void }) => {
   res.json({
     status: 'ok',
     simulationMode,

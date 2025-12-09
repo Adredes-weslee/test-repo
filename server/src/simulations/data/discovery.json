@@ -1,0 +1,39 @@
+{
+  "summary": "Exploration of learner needs for a project-based learning workshop.",
+  "learnerProfile": {
+    "audience": "New instructors experimenting with project-based learning",
+    "prerequisites": ["Basic classroom management", "Familiarity with formative assessment"],
+    "constraints": ["Limited access to devices", "Two-week timeline"]
+  },
+  "problemStatements": [
+    "Learners need a replicable structure for guiding students through projects without overwhelming planning time.",
+    "Learners struggle to connect project tasks to clear assessment criteria."
+  ],
+  "opportunities": [
+    "Model a simple project lifecycle with ready-to-use templates.",
+    "Surface reflection checkpoints that align to rubrics."
+  ],
+  "proposedOutline": [
+    {
+      "title": "Kickoff and project selection",
+      "outcomes": [
+        "Identify a manageable project topic",
+        "Frame a driving question for students"
+      ]
+    },
+    {
+      "title": "Scaffolding milestones",
+      "outcomes": [
+        "Plan weekly goals",
+        "Pair formative checks with each milestone"
+      ]
+    },
+    {
+      "title": "Assessment and reflection",
+      "outcomes": [
+        "Draft a simple rubric",
+        "Design reflection prompts for students"
+      ]
+    }
+  ]
+}

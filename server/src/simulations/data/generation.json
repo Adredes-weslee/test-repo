@@ -1,0 +1,54 @@
+{
+  "curriculum": {
+    "title": "Project-Based Learning Quickstart",
+    "modules": [
+      {
+        "title": "Project Foundations",
+        "objectives": [
+          "Draft a driving question",
+          "Define success criteria for students"
+        ],
+        "lessons": [
+          {
+            "title": "From topic to driving question",
+            "activities": ["Brainstorm classroom topics", "Refine into a driving question"],
+            "durationMinutes": 45
+          },
+          {
+            "title": "Assessing what matters",
+            "activities": ["Identify skills", "Draft rubric rows"],
+            "durationMinutes": 40
+          }
+        ]
+      },
+      {
+        "title": "Guiding Projects",
+        "objectives": [
+          "Plan milestones",
+          "Connect formative checks to milestones"
+        ],
+        "lessons": [
+          {
+            "title": "Milestone mapping",
+            "activities": ["Create weekly goals", "Add check-ins"],
+            "durationMinutes": 50
+          },
+          {
+            "title": "Feedback loops",
+            "activities": ["Plan peer review", "Design reflection prompts"],
+            "durationMinutes": 35
+          }
+        ]
+      }
+    ]
+  },
+  "assessments": {
+    "formatives": ["Exit tickets", "Peer review checklist"],
+    "summative": "Culminating project rubric with self-reflection"
+  },
+  "resources": [
+    "Example driving questions",
+    "Milestone planning template",
+    "Rubric starter"
+  ]
+}
