@@ -77,9 +77,15 @@ const evaluateValidationResult = (result: Partial<ValidationResult>): boolean =>
   return andragogyScore >= 0.7 && pedagogyScore >= 0.7;
 };
 
-export const startRun = async (payload: unknown): Promise<AgentRun | undefined> => {
+const initializeRun = (payload: unknown): AgentRun => {
   const run = orchestratorStore.createRun({ input: payload });
   orchestratorStore.updateRunStatus(run.id, 'created');
+  return run;
+};
+
+const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
+  const run = orchestratorStore.getRun(runId);
+  if (!run) return undefined;
 
   let runStarted = false;
   let runFailed = false;
@@ -168,4 +174,15 @@ export const startRun = async (payload: unknown): Promise<AgentRun | undefined> 
     emitRunFailed(error instanceof Error ? error.message : 'Run failed');
     return orchestratorStore.getRun(run.id);
   }
+};
+
+export const startRun = async (payload: unknown): Promise<AgentRun | undefined> => {
+  const run = initializeRun(payload);
+  return runWorkflow(run.id);
+};
+
+export const startRunAsync = (payload: unknown): { runId: string } => {
+  const run = initializeRun(payload);
+  void runWorkflow(run.id);
+  return { runId: run.id };
 };

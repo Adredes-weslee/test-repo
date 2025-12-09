@@ -113,6 +113,12 @@ export class OrchestratorStore {
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
+  listAllTasks(): AgentTask[] {
+    return Array.from(this.tasks.values()).sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+    );
+  }
+
   appendEvent(input: AppendEventInput): AgentEvent {
     const event: AgentEvent = {
       id: uuidv4(),
