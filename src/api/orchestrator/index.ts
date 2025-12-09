@@ -3,6 +3,8 @@ const DEFAULT_ORCHESTRATOR_BASE_URL = 'http://localhost:4000';
 const orchestratorBaseUrl = (import.meta.env?.VITE_ORCHESTRATOR_BASE_URL || DEFAULT_ORCHESTRATOR_BASE_URL).replace(/\/$/, '');
 
 export const isOrchestratorEnabled = (import.meta.env?.VITE_USE_ORCHESTRATOR ?? 'false') === 'true';
+export const isOrchestratorDebugCompareEnabled =
+  (import.meta.env?.VITE_ORCHESTRATOR_DEBUG_COMPARE ?? 'false') === 'true';
 
 interface EnvelopeError {
   message?: string;
@@ -32,6 +34,12 @@ export interface OrchestrationRun {
 
 interface OrchestrationLogs {
   logs: string[];
+}
+
+export interface OrchestrationTask {
+  id?: string;
+  status?: string;
+  name?: string;
 }
 
 interface OrchestrationStartResponse {
@@ -89,4 +97,10 @@ export const getOrchestrationLogs = async (runId: string): Promise<Orchestration
   const response = await fetch(buildUrl(`/orchestrations/${runId}/logs`));
 
   return handleOrchestratorResponse<OrchestrationLogs>(response);
+};
+
+export const getOrchestrationTasks = async (runId: string): Promise<OrchestrationTask[]> => {
+  const response = await fetch(buildUrl(`/orchestrations/${runId}/tasks`));
+
+  return handleOrchestratorResponse<OrchestrationTask[]>(response);
 };

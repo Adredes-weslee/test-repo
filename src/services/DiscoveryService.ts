@@ -1,8 +1,15 @@
 import { fetchTrendingTopics, fetchTrendingCapstoneTopics, generateCurriculum, generateCapstoneProjects, fetchIndustryTrends, fetchTrendData, fetchTopicDetails } from '../api';
 import type { GenerateCurriculumResponse, IndustryTrend } from '../types';
 import type { GenerateCapstoneProjectsResponse } from '../api/generateCapstoneProjects';
-import { getOrchestrationLogs, getOrchestrationStatus, isOrchestratorEnabled, startOrchestration } from '../api/orchestrator';
-import { appConfig } from '../config';
+import {
+  getOrchestrationLogs,
+  getOrchestrationStatus,
+  getOrchestrationTasks,
+  isOrchestratorDebugCompareEnabled,
+  isOrchestratorEnabled,
+  startOrchestration,
+} from '../api/orchestrator';
+import { ORCHESTRATOR_DEBUG_COMPARE, appConfig } from '../config';
 import { simulateProgress } from '../utils';
 import type { OrchestrationRun } from '../api/orchestrator';
 import { setLastOrchestratorDebug } from './orchestratorDebugStore';
@@ -79,9 +86,15 @@ const normalizeCurriculumsForUI = (
 ): GenerateCurriculumResponse => {
   const curriculumsArray = Array.isArray(rawCurriculums)
     ? rawCurriculums
-    : rawCurriculums
-      ? [rawCurriculums]
-      : [];
+    : rawCurriculums && typeof rawCurriculums === 'object'
+      ? Object.keys(rawCurriculums)
+          .filter(key => /^\d+$/.test(key))
+          .sort((a, b) => Number(a) - Number(b))
+          .map(key => (rawCurriculums as any)[key])
+          .filter(Boolean)
+      : rawCurriculums
+        ? [rawCurriculums]
+        : [];
 
   return {
     curriculums: curriculumsArray.map(raw => normalizeCurriculumForUI(raw as any)),
@@ -122,6 +135,13 @@ class DiscoveryService {
     if (!isOrchestratorEnabled) {
       return (async () => {
         const directGeneration = await generateCurriculum(topic, filters, files, onProgress);
+        const rawCurriculums = directGeneration?.curriculums ??
+          (directGeneration?.curriculum ? [directGeneration.curriculum] : []) ??
+          [];
+        const normalized = normalizeCurriculumsForUI(
+          rawCurriculums,
+          (directGeneration as any)?.agentThoughts ?? (directGeneration as any)?.thoughts ?? []
+        );
 
         try {
           setLastOrchestratorDebug({
@@ -131,14 +151,14 @@ class DiscoveryService {
             run: null,
             logs: [],
             orchestratorGeneration: null,
-            directGeneration,
+            directGeneration: normalized,
             directError: null,
           });
         } catch (error) {
           console.warn('Failed to record orchestrator debug info for direct generation', error);
         }
 
-        return directGeneration;
+        return normalized;
       })();
     }
 
@@ -164,6 +184,26 @@ class DiscoveryService {
     return (async () => {
       let orchestrationId: string | null = null;
       let run: OrchestrationRun | null = null;
+      let tasks: any[] = [];
+
+      const recordDebugSnapshot = (overrides: Partial<any> = {}) => {
+        try {
+          setLastOrchestratorDebug({
+            enabled: true,
+            input: { topic, filters, filesCount: files.length },
+            orchestrationId,
+            run,
+            tasks,
+            logs: [],
+            orchestratorGeneration: run?.output,
+            directGeneration: null,
+            directError: null,
+            ...overrides,
+          });
+        } catch (error) {
+          console.warn('Failed to record orchestrator debug info', error);
+        }
+      };
 
       try {
         const { id, runId } = await startOrchestration({ type: 'course', topic, filters, files });
@@ -176,13 +216,30 @@ class DiscoveryService {
         const startTime = Date.now();
         const maxWaitTime = 600_000;
         run = await getOrchestrationStatus(orchestrationId);
+        recordDebugSnapshot();
 
         while (!isTerminalStatus(run.status)) {
           if (Date.now() - startTime > maxWaitTime) {
             throw new Error('Curriculum orchestration timed out after 60 seconds');
           }
+
           await awaitNextStatus();
+
+          try {
+            const fetchedTasks = orchestrationId ? await getOrchestrationTasks(orchestrationId) : [];
+            tasks = Array.isArray(fetchedTasks) ? fetchedTasks : tasks;
+            const total = tasks.length;
+            const done = tasks.filter(task => ['succeeded', 'failed', 'cancelled'].includes(task?.status || '')).length;
+            const pct = total > 0 ? Math.min(95, Math.round((done / total) * 100)) : null;
+            if (pct !== null) {
+              onProgress(pct);
+            }
+          } catch (error) {
+            console.warn('Failed to fetch orchestration tasks', error);
+          }
+
           run = await getOrchestrationStatus(orchestrationId);
+          recordDebugSnapshot();
         }
 
         clearInterval(progressInterval);
@@ -201,10 +258,17 @@ class DiscoveryService {
         let directGeneration: GenerateCurriculumResponse | null = null;
         let directError: string | null = null;
 
-        try {
-          directGeneration = await generateCurriculum(topic, filters, files, () => {});
-        } catch (error) {
-          directError = error instanceof Error ? error.message : String(error);
+        if (ORCHESTRATOR_DEBUG_COMPARE && isOrchestratorDebugCompareEnabled) {
+          try {
+            const direct = await generateCurriculum(topic, filters, files, () => {});
+            const rawCurriculums = direct?.curriculums ?? (direct?.curriculum ? [direct.curriculum] : []) ?? [];
+            directGeneration = normalizeCurriculumsForUI(
+              rawCurriculums,
+              (direct as any)?.agentThoughts ?? (direct as any)?.thoughts ?? []
+            );
+          } catch (error) {
+            directError = error instanceof Error ? error.message : String(error);
+          }
         }
 
         try {
@@ -214,6 +278,7 @@ class DiscoveryService {
             input: { topic, filters, filesCount: files.length },
             orchestrationId,
             run,
+            tasks,
             logs: logs?.logs ?? [],
             orchestratorGeneration: generationOutput,
             directGeneration,

@@ -37,12 +37,19 @@ const Section: React.FC<{
 export const CurriculumDetailView: React.FC<{ curriculum: Curriculum | undefined; onGenerate: (curriculum: Curriculum) => void; }> = ({ curriculum, onGenerate }) => {
     if (!curriculum) return null;
 
+    const modules = Array.isArray(curriculum?.modules) ? curriculum.modules : [];
     const difficultyTag = curriculum.tags.find(isDifficultyTag);
     const otherTags = curriculum.tags.filter(tag => !isDifficultyTag(tag));
     const sortedTags = difficultyTag ? [difficultyTag, ...otherTags] : curriculum.tags;
 
-    const regularLessons = curriculum.content.lessons;
-    const capstoneProjects = curriculum.content.capstoneProjects || [];
+    const safeLessons = Array.isArray(curriculum?.content?.lessons) ? curriculum.content.lessons : [];
+    const capstoneProjects = Array.isArray(curriculum?.content?.capstoneProjects)
+        ? curriculum.content.capstoneProjects
+        : [];
+
+    const lessons = modules.length > 0
+        ? modules.flatMap(module => (Array.isArray((module as any)?.lessons) ? (module as any).lessons : []))
+        : safeLessons;
 
     return (
         <div className="w-full lg:w-[420px] bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-shrink-0 sticky top-24 animate-fadeIn">
@@ -58,7 +65,7 @@ export const CurriculumDetailView: React.FC<{ curriculum: Curriculum | undefined
 
             <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-450px)] pr-2">
                 <Section title="Learning Outcomes" items={curriculum.learningOutcomes} icon={Goal} />
-                <Section title="Lessons" items={regularLessons} icon={Lesson} />
+                <Section title="Lessons" items={lessons} icon={Lesson} />
                 <Section title="Possible Capstone Projects" items={capstoneProjects} icon={Project} />
             </div>
         </div>

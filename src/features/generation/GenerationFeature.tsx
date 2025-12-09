@@ -1,11 +1,13 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LessonPlanViewer } from './components/LessonPlanViewer';
 import { useGeneration } from './hooks';
 import { ConfirmationModal, LoadingSpinner } from '../../components/ui';
 import { CapstoneWorkspace } from './components/capstone/CapstoneWorkspace';
 import { GenerationInputForm } from './components/GenerationInputForm';
 import { useCurriculumStore } from '../../store';
+import { OrchestratorDebugPanel } from '../../components/orchestrator/OrchestratorDebugPanel';
+import { getLastOrchestratorDebug } from '../../services/orchestratorDebugStore';
 
 const GenerationFeature: React.FC = () => {
     const hookValues = useGeneration();
@@ -23,6 +25,10 @@ const GenerationFeature: React.FC = () => {
         openTrashModal,
     } = hookValues;
     const { startGenerationWithPrompt, setStartGenerationWithPrompt } = useCurriculumStore();
+    const [debugData, setDebugData] = useState(getLastOrchestratorDebug());
+
+    const status = debugData?.run?.status;
+    const isTerminal = ['completed', 'failed', 'cancelled'].includes(status || '');
 
     useEffect(() => {
         if (startGenerationWithPrompt) {
@@ -30,6 +36,15 @@ const GenerationFeature: React.FC = () => {
             setStartGenerationWithPrompt(null);
         }
     }, [startGenerationWithPrompt, setStartGenerationWithPrompt, handleGenerate]);
+
+    useEffect(() => {
+        if (isTerminal) return;
+        const interval = setInterval(() => {
+            setDebugData(getLastOrchestratorDebug());
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, [isTerminal]);
     
     const renderContent = () => {
         if (view === 'loading') {
@@ -99,6 +114,20 @@ const GenerationFeature: React.FC = () => {
     return (
         <>
             {renderContent()}
+            <div className="mt-6">
+                <OrchestratorDebugPanel
+                    enabled={Boolean(debugData?.enabled)}
+                    topic={debugData?.input?.topic ?? ''}
+                    filters={debugData?.input?.filters ?? {}}
+                    filesCount={debugData?.input?.filesCount ?? 0}
+                    orchestrationId={debugData?.orchestrationId ?? null}
+                    run={debugData?.run ?? null}
+                    logs={debugData?.logs ?? []}
+                    orchestratorGeneration={debugData?.orchestratorGeneration}
+                    directGeneration={debugData?.directGeneration}
+                    directError={debugData?.directError ?? null}
+                />
+            </div>
             <ConfirmationModal
                 isOpen={isCancelModalOpen}
                 onClose={closeCancelModal}
