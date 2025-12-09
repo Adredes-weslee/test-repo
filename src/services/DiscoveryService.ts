@@ -1,10 +1,20 @@
 import { fetchTrendingTopics, fetchTrendingCapstoneTopics, generateCurriculum, generateCapstoneProjects, fetchIndustryTrends, fetchTrendData, fetchTopicDetails } from '../api';
 import type { GenerateCurriculumResponse, IndustryTrend } from '../types';
 import type { GenerateCapstoneProjectsResponse } from '../api/generateCapstoneProjects';
-import { getOrchestrationStatus, isOrchestratorEnabled, startOrchestration } from '../api/orchestrator';
+import {
+  getHealth,
+  getOrchestrationFeedback,
+  getOrchestrationLogs,
+  getOrchestrationLogsCompact,
+  getOrchestrationStatus,
+  getOrchestrationTasks,
+  isOrchestratorEnabled,
+  startOrchestration,
+} from '../api/orchestrator';
 import { appConfig } from '../config';
 import { simulateProgress } from '../utils';
 import type { OrchestrationRun } from '../api/orchestrator';
+import { mergeLastOrchestratorDebug, setLastOrchestratorDebug } from './orchestratorDebugStore';
 
 type LegacyCurriculumLike = {
   curriculumTitle?: string;
@@ -129,6 +139,71 @@ class DiscoveryService {
 
     const awaitNextStatus = () => new Promise(resolve => setTimeout(resolve, pollInterval));
 
+    const captureDebugData = (orchestrationId: string, run: OrchestrationRun) => {
+      void (async () => {
+        let runDetails: OrchestrationRun | null = run ?? null;
+        let tasks: any[] | undefined;
+        let logs: any[] | undefined;
+        let logsCompact: any[] | undefined;
+        let mode: 'simulation' | 'live' | 'unknown' = 'unknown';
+        let feedback: any;
+
+        try {
+          runDetails = await getOrchestrationStatus(orchestrationId);
+        } catch {
+          // non-fatal
+        }
+
+        try {
+          tasks = await getOrchestrationTasks(orchestrationId);
+        } catch {
+          // non-fatal
+        }
+
+        try {
+          logs = await getOrchestrationLogs(orchestrationId);
+        } catch {
+          // non-fatal
+        }
+
+        try {
+          logsCompact = await getOrchestrationLogsCompact(orchestrationId);
+        } catch {
+          // non-fatal
+        }
+
+        try {
+          const health = await getHealth();
+          mode = health?.simulationMode === undefined ? 'unknown' : health.simulationMode ? 'simulation' : 'live';
+        } catch {
+          // non-fatal
+        }
+
+        try {
+          feedback = await getOrchestrationFeedback(orchestrationId);
+        } catch {
+          // non-fatal
+        }
+
+        const outputs = {
+          discovery: (runDetails?.output as any)?.discovery,
+          generation: (runDetails?.output as any)?.generation,
+          validation: (runDetails?.output as any)?.validation,
+        };
+
+        mergeLastOrchestratorDebug({
+          orchestrationId,
+          run: runDetails,
+          tasks,
+          logs: (logs as any)?.logs ?? logs,
+          logsCompact,
+          outputs,
+          mode,
+          feedback,
+        });
+      })();
+    };
+
     const mapRunToCurriculum = (run: OrchestrationRun): GenerateCurriculumResponse => {
       const generationOutput = (run.output as any)?.generation ?? run.output ?? {};
       const rawCurriculums =
@@ -150,6 +225,12 @@ class DiscoveryService {
           throw new Error('Failed to start curriculum orchestration');
         }
 
+        setLastOrchestratorDebug({
+          enabled: true,
+          orchestrationId,
+          input: { topic, filters, filesCount: files?.length ?? 0, files },
+        });
+
         const startTime = Date.now();
         const maxWaitTime = 600_000;
         let run = await getOrchestrationStatus(orchestrationId);
@@ -163,6 +244,8 @@ class DiscoveryService {
         }
 
         clearInterval(progressInterval);
+
+        captureDebugData(orchestrationId, run);
 
         if (run.status === 'completed') {
           onProgress(100);
