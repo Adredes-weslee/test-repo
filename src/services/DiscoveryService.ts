@@ -69,7 +69,7 @@ class DiscoveryService {
         }
 
         const startTime = Date.now();
-        const maxWaitTime = 60_000;
+        const maxWaitTime = 600_000;
         let run = await getOrchestrationStatus(orchestrationId);
 
         while (!isTerminalStatus(run.status)) {
