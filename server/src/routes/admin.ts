@@ -23,4 +23,9 @@ router.get('/queue', (_req: Request, res: Response) => {
   respondOk(res, { queue });
 });
 
+router.get('/evaluations', (_req: Request, res: Response) => {
+  const evaluations = orchestratorStore.listRunEvaluations();
+  respondOk(res, { evaluations });
+});
+
 export const adminRouter = router;

@@ -1,6 +1,7 @@
 import validationFixture from '../simulations/data/validation.json';
 import { AgentTask } from '../orchestrator/types';
 import { buildPrompt, isSimulationMode, loadGeminiModel, parseModelText } from './utils';
+import { orchestratorStore } from '../orchestrator/store';
 
 export interface ValidationResult {
   andragogyScore: number;
@@ -12,6 +13,46 @@ export interface ValidationResult {
 }
 
 const goal = 'Evaluate the learning plan for pedagogy and andragogy. Respond with JSON containing andragogyScore, pedagogyScore, pass, and reasons (array).';
+
+const extractTopic = (task: AgentTask): string | undefined => {
+  const run = orchestratorStore.getRun(task.runId);
+  const topic = (run?.input as { topic?: unknown } | undefined)?.topic;
+  if (typeof topic === 'string' && topic.trim()) {
+    return topic.trim();
+  }
+
+  return undefined;
+};
+
+const stringifySafe = (value: unknown): string => {
+  try {
+    return typeof value === 'string' ? value : JSON.stringify(value);
+  } catch (_error) {
+    return String(value);
+  }
+};
+
+const checkRelevance = (task: AgentTask): ValidationResult | null => {
+  const topic = extractTopic(task);
+  if (!topic) return null;
+
+  const generationTask = orchestratorStore
+    .listTasksByRun(task.runId)
+    .find((entry) => entry.agent === 'generation');
+
+  const haystack = `${stringifySafe(generationTask?.result ?? '')} ${task.description ?? ''}`.toLowerCase();
+  if (haystack.includes(topic.toLowerCase())) {
+    return null;
+  }
+
+  return {
+    andragogyScore: 0.1,
+    pedagogyScore: 0.1,
+    pass: false,
+    reasons: ['Artifact appears out of scope for requested topic.'],
+    source: 'relevance-filter',
+  };
+};
 
 const runSimulation = (_task: AgentTask): ValidationResult => {
   return {
@@ -52,6 +93,11 @@ const runLive = async (task: AgentTask): Promise<ValidationResult> => {
 };
 
 export const validationAgent = async (task: AgentTask): Promise<ValidationResult> => {
+  const relevanceResult = checkRelevance(task);
+  if (relevanceResult) {
+    return relevanceResult;
+  }
+
   if (isSimulationMode()) {
     return runSimulation(task);
   }

@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { evaluateArtifact } from '../evaluation/evaluate';
+import { orchestratorStore } from '../orchestrator/store';
 
 const router = Router();
 
@@ -28,6 +29,10 @@ router.post('/', (req: Request, res: Response, next: NextFunction) => {
       artifact: body.artifact,
       intent: body.intent,
     });
+
+    if (typeof body.runId === 'string' && body.runId) {
+      orchestratorStore.setRunEvaluation(body.runId, evaluation);
+    }
 
     respondOk(res, { evaluation });
   } catch (error) {

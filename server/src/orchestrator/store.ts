@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { sanitizeEventMessage } from './events';
+import { redactPIIDeep } from '../safety/pii';
 import {
   AgentEvent,
   AgentRun,
@@ -62,9 +63,11 @@ export class OrchestratorStore {
     const run = this.runs.get(runId);
     if (!run) return undefined;
 
+    const redactedOutput = redactPIIDeep(output);
+
     const updated: AgentRun = {
       ...run,
-      output,
+      output: redactedOutput,
       updatedAt: new Date(),
     };
 
@@ -179,6 +182,13 @@ export class OrchestratorStore {
 
   getRunEvaluation(runId: string): unknown {
     return this.evaluationResults.get(runId);
+  }
+
+  listRunEvaluations(): { runId: string; evaluation: unknown }[] {
+    return Array.from(this.evaluationResults.entries()).map(([runId, evaluation]) => ({
+      runId,
+      evaluation,
+    }));
   }
 }
 
