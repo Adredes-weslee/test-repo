@@ -30,6 +30,8 @@ interface PreviewHeaderProps {
     onCurriculumTitleChange?: (newTitle: string) => void;
     onDiscard?: () => void;
     lessonPlans?: (LessonPlan | null)[] | null;
+    showDebugButton?: boolean;
+    onOpenDebug?: () => void;
 }
 
 export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
@@ -55,6 +57,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     onCurriculumTitleChange,
     onDiscard,
     lessonPlans,
+    showDebugButton,
+    onOpenDebug,
 }) => {
     const curriculumTitleRegenButtonRef = React.useRef<HTMLButtonElement>(null);
     const navigateTo = useNavigationStore((state) => state.navigateTo);
@@ -196,6 +200,17 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
                         disabled={isEditing}
                     >
                         Duplicate & Vary
+                    </Button>
+                )}
+                {showDebugButton && onOpenDebug && (
+                    <Button
+                        variant="secondary"
+                        onClick={onOpenDebug}
+                        size="small"
+                        className="!px-3"
+                        disabled={isEditing}
+                    >
+                        Debug
                     </Button>
                 )}
                 {showSaveButton && (

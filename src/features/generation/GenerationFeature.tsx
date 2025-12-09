@@ -1,11 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LessonPlanViewer } from './components/LessonPlanViewer';
 import { useGeneration } from './hooks';
 import { ConfirmationModal, LoadingSpinner } from '../../components/ui';
 import { CapstoneWorkspace } from './components/capstone/CapstoneWorkspace';
 import { GenerationInputForm } from './components/GenerationInputForm';
 import { useCurriculumStore } from '../../store';
+import { GenerationDebugPanel } from '../../components/orchestrator/GenerationDebugPanel';
+import { generateCurriculum as generateCurriculumApi } from '../../api/generateCurriculum';
+import { getLastOrchestratorDebug, mergeLastOrchestratorDebug } from '../../services/orchestratorDebugStore';
 
 const GenerationFeature: React.FC = () => {
     const hookValues = useGeneration();
@@ -23,6 +26,9 @@ const GenerationFeature: React.FC = () => {
         openTrashModal,
     } = hookValues;
     const { startGenerationWithPrompt, setStartGenerationWithPrompt } = useCurriculumStore();
+    const [isDebugOpen, setIsDebugOpen] = useState(false);
+    const [debugSnapshot, setDebugSnapshot] = useState<any | null>(null);
+    const [isComparing, setIsComparing] = useState(false);
 
     useEffect(() => {
         if (startGenerationWithPrompt) {
@@ -30,6 +36,43 @@ const GenerationFeature: React.FC = () => {
             setStartGenerationWithPrompt(null);
         }
     }, [startGenerationWithPrompt, setStartGenerationWithPrompt, handleGenerate]);
+
+    const openDebugPanel = () => {
+        setDebugSnapshot(getLastOrchestratorDebug());
+        setIsDebugOpen(true);
+    };
+
+    const closeDebugPanel = () => setIsDebugOpen(false);
+
+    const runDirectCompare = async () => {
+        const snap = getLastOrchestratorDebug();
+        if (!snap?.input?.topic) {
+            return;
+        }
+
+        setIsComparing(true);
+        try {
+            const direct = await generateCurriculumApi(
+                snap.input.topic,
+                snap.input.filters || {},
+                snap.input.files || [],
+                (_p: number) => {}
+            );
+
+            mergeLastOrchestratorDebug({
+                directGeneration: direct,
+                directError: null,
+            });
+        } catch (err) {
+            mergeLastOrchestratorDebug({
+                directGeneration: null,
+                directError: err instanceof Error ? err.message : String(err),
+            });
+        } finally {
+            setDebugSnapshot(getLastOrchestratorDebug());
+            setIsComparing(false);
+        }
+    };
     
     const renderContent = () => {
         if (view === 'loading') {
@@ -83,6 +126,7 @@ const GenerationFeature: React.FC = () => {
                             onDiscard={openTrashModal}
                             andragogyAnalysis={hookValues.andragogyAnalysis}
                             isAnalyzingAndragogy={hookValues.isAnalyzingAndragogy}
+                            onOpenDebug={openDebugPanel}
                         />
                     </div>
                 );
@@ -99,6 +143,13 @@ const GenerationFeature: React.FC = () => {
     return (
         <>
             {renderContent()}
+            <GenerationDebugPanel
+                isOpen={isDebugOpen}
+                onClose={closeDebugPanel}
+                snapshot={debugSnapshot}
+                onRunDirectCompare={runDirectCompare}
+                isComparing={isComparing}
+            />
             <ConfirmationModal
                 isOpen={isCancelModalOpen}
                 onClose={closeCancelModal}

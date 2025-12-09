@@ -4,6 +4,8 @@ import { getDefaultGenerationOptions } from '../../../config';
 import { isDifficultyTag, lessonPlanToMarkdown, updateFileContentInTree } from '../../../utils';
 import { useCurriculumStore, useContentLibraryStore, useToastStore, useNavigationStore } from '../../../store';
 import { generationService, projectService, discoveryService } from '../../../services';
+import { isOrchestratorEnabled } from '../../../api/orchestrator';
+import { setLastOrchestratorDebug } from '../../../services/orchestratorDebugStore';
 import type { Curriculum, LessonPlan, GenerationOptions, DetailedProjectData, CapstoneProject, FileNode, RegenerationPart, Exercise, AndragogicalAnalysis } from '../../../types';
 
 type GenerationMode = 'idle' | 'course' | 'capstone';
@@ -223,17 +225,24 @@ export const useGeneration = () => {
             }
 
             if (type === 'course') {
+                const filters = { difficulty: 'any', numLessons: 'any' };
                 const response = await discoveryService.generateCurriculum(
-                    prompt, 
-                    { difficulty: 'any', numLessons: 'any' }, 
-                    fileData, 
+                    prompt,
+                    filters,
+                    fileData,
                     (p) => { if (!isCancelledRef.current) setProgress(p * 0.9); }
                 );
-                
+
                 if (isCancelledRef.current) return;
 
                 const curriculum = response.curriculums.find(c => c.recommended) || response.curriculums[0];
                 if (!curriculum) throw new Error("No curriculum generated");
+
+                setLastOrchestratorDebug({
+                    enabled: isOrchestratorEnabled,
+                    input: { topic: prompt, filters, filesCount: fileData.length, files: fileData },
+                    orchestratorOrFinalGeneration: curriculum,
+                });
 
                 await startCourseGeneration(curriculum, getDefaultGenerationOptions());
 

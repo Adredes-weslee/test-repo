@@ -34,6 +34,7 @@ interface LessonPlanViewerProps {
     andragogyAnalysis: AndragogicalAnalysis | null;
     isAnalyzingAndragogy: boolean;
     onResume?: () => void;
+    onOpenDebug?: () => void;
 }
 
 export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
@@ -60,6 +61,7 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
     andragogyAnalysis,
     isAnalyzingAndragogy,
     onResume,
+    onOpenDebug,
 }) => {
     const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
     const [animationDirection, setAnimationDirection] = useState<'right' | 'left' | null>(null);
@@ -211,6 +213,8 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
                         onCurriculumTitleChange={setEditedCurriculumTitle}
                         onDiscard={onDiscard}
                         lessonPlans={lessonPlans}
+                        showDebugButton={!!onOpenDebug}
+                        onOpenDebug={onOpenDebug}
                     />
                     
                     <Collapsible
