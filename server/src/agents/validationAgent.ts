@@ -39,6 +39,12 @@ const stringifySafe = (value: unknown): string => {
   }
 };
 
+const tokenize = (value: string): string[] =>
+  value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+
 const checkRelevance = (task: AgentTask): ValidationResult | null => {
   const topic = extractTopic(task);
   if (!topic) return null;
@@ -47,10 +53,26 @@ const checkRelevance = (task: AgentTask): ValidationResult | null => {
     .listTasksByRun(task.runId)
     .find((entry) => entry.agent === 'generation');
 
-  const haystack = `${stringifySafe(generationTask?.result ?? '')} ${task.description ?? ''}`.toLowerCase();
-  if (haystack.includes(topic.toLowerCase())) {
+  if (
+    generationTask?.result &&
+    typeof generationTask.result === 'object' &&
+    (generationTask.result as { source?: string }).source === 'simulation'
+  ) {
     return null;
   }
+
+  const tokens = tokenize(topic);
+  if (!tokens.length) return null;
+
+  const haystack = `${stringifySafe(generationTask?.result ?? '')} ${task.description ?? ''}`.toLowerCase();
+
+  const hits = tokens.reduce(
+    (count, token) => (haystack.includes(token) ? count + 1 : count),
+    0
+  );
+
+  const requiredHits = Math.max(1, Math.ceil(tokens.length * 0.5));
+  if (hits >= requiredHits) return null;
 
   return {
     andragogyScore: 0.1,
@@ -104,13 +126,13 @@ const runLive = async (task: AgentTask): Promise<ValidationResult> => {
 };
 
 export const validationAgent = async (task: AgentTask): Promise<ValidationResult> => {
+  if (shouldSimulate(task)) {
+    return runSimulation(task);
+  }
+
   const relevanceResult = checkRelevance(task);
   if (relevanceResult) {
     return relevanceResult;
-  }
-
-  if (shouldSimulate(task)) {
-    return runSimulation(task);
   }
 
   return runLive(task);

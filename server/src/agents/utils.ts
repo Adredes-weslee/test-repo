@@ -1,4 +1,5 @@
 import { AgentTask } from '../orchestrator/types';
+import { orchestratorStore } from '../orchestrator/store';
 
 export interface GeminiModel {
   generateContent: (
@@ -10,6 +11,18 @@ export const isSimulationMode = (): boolean =>
   process.env.SIMULATION_MODE === 'true' || !process.env.GEMINI_API_KEY;
 
 export const buildPrompt = (task: AgentTask, goal: string): string => {
+  const run = orchestratorStore.getRun(task.runId);
+  const input = run?.input as
+    | { type?: unknown; topic?: unknown; filters?: unknown; files?: unknown[] }
+    | undefined;
+
+  const inputSummary = {
+    type: typeof input?.type === 'string' ? input.type : undefined,
+    topic: typeof input?.topic === 'string' ? input.topic : undefined,
+    filters: input?.filters ?? undefined,
+    filesCount: Array.isArray(input?.files) ? input?.files?.length : 0,
+  };
+
   const baseDescription = task.description
     ? `Task description: ${task.description}`
     : 'No explicit task description provided.';
@@ -17,7 +30,9 @@ export const buildPrompt = (task: AgentTask, goal: string): string => {
   return [
     goal,
     baseDescription,
-    'Return JSON only.',
+    `Run input summary: ${JSON.stringify(inputSummary)}`,
+    'Stay on the requested topic throughout. Curriculum and module titles must clearly reflect the topic.',
+    'Return valid JSON only.',
   ].join('\n');
 };
 
@@ -25,38 +40,42 @@ export const loadGeminiModel = async (): Promise<GeminiModel | null> => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const candidates = ['@google/genai', '@google/generative-ai'];
+  const modelName = process.env.GEMINI_MODEL ?? 'gemini-2.5-pro';
 
-  for (const moduleName of candidates) {
+  try {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const client = new GoogleGenerativeAI(apiKey);
+    return client.getGenerativeModel({ model: modelName });
+  } catch (primaryError) {
     try {
-      const mod = (await import(moduleName)) as any;
-
-      // @google/genai style
-      if (mod?.GoogleGenerativeAI) {
-        const client = new mod.GoogleGenerativeAI(apiKey);
-        return client.getGenerativeModel({ model: 'gemini-2.5-pro' });
-      }
-
-      // @google/generative-ai style
-      if (mod?.GoogleGenerativeAI) {
-        const client = new mod.GoogleGenerativeAI(apiKey);
-        return client.getGenerativeModel({ model: 'gemini-2.5-pro' });
-      }
-    } catch {
-      // try next
+      const { GoogleGenerativeAI } = await import('@google/genai');
+      const client = new GoogleGenerativeAI(apiKey);
+      return client.getGenerativeModel({ model: modelName });
+    } catch (_fallbackError) {
+      console.warn('Gemini SDK not available; falling back to simulation.', primaryError);
+      return null;
     }
   }
-
-  console.warn('Gemini SDK not available; falling back to simulation.');
-  return null;
 };
 
 export const parseModelText = (text?: string): unknown => {
   if (!text) return null;
 
+  let cleaned = text.trim();
+
+  const fencedMatch = cleaned.match(/^```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch) {
+    cleaned = fencedMatch[1].trim();
+  }
+
+  const jsonMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[1];
+  }
+
   try {
-    return JSON.parse(text);
+    return JSON.parse(cleaned);
   } catch (_error) {
-    return { message: text };
+    return { message: cleaned };
   }
 };

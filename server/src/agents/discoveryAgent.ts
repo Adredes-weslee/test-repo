@@ -41,7 +41,7 @@ const runLive = async (task: AgentTask): Promise<unknown> => {
     }
 
     // fallback if parseModelText returns a string/primitive
-    return { output: parsed, source: 'gemini' };
+    return { message: text ?? String(parsed), source: 'gemini' };
   } catch (_error) {
     return {
       ...discoveryFixture,

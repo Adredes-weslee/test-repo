@@ -40,7 +40,7 @@ const runLive = async (task: AgentTask): Promise<unknown> => {
       return { ...(parsed as Record<string, unknown>), source: 'gemini' };
     }
 
-    return { output: parsed, source: 'gemini' };
+    return { message: text ?? String(parsed), source: 'gemini' };
   } catch (_error) {
     return {
       ...generationFixture,
