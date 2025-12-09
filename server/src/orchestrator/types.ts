@@ -11,9 +11,15 @@ export interface AgentRun {
   status: AgentRunStatus;
   input?: unknown;
   output?: unknown;
+  error?: RunError;
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface RunError {
+  message: string;
+}
+
 
 export type AgentTaskStatus =
   | 'queued'

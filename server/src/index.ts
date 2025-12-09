@@ -7,6 +7,9 @@ import { orchestrationsRouter } from './routes/orchestrations';
 
 dotenv.config();
 
+console.log('[env] SIMULATION_MODE=', process.env.SIMULATION_MODE);
+console.log('[env] GEMINI_API_KEY set=', Boolean(process.env.GEMINI_API_KEY));
+
 const app = express();
 const port = Number(process.env.PORT) || 4000;
 const simulationMode = process.env.SIMULATION_MODE === 'true';

@@ -14,6 +14,8 @@ import {
   FeedbackEntry,
 } from './types';
 
+import type { RunError } from './types';
+
 export class OrchestratorStore {
   private runs = new Map<string, AgentRun>();
   private tasks = new Map<string, AgentTask>();
@@ -183,6 +185,29 @@ export class OrchestratorStore {
   getRunEvaluation(runId: string): unknown {
     return this.evaluationResults.get(runId);
   }
+  
+  setRunError(runId: string, error: unknown): AgentRun | undefined {
+    const run = this.runs.get(runId);
+    if (!run) return undefined;
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : 'Run failed';
+
+    const updated: AgentRun = {
+      ...run,
+      status: 'failed',
+      error: { message },
+      updatedAt: new Date(),
+    };
+
+    this.runs.set(runId, updated);
+    return updated;
+  }
+
 
   listRunEvaluations(): { runId: string; evaluation: unknown }[] {
     return Array.from(this.evaluationResults.entries()).map(([runId, evaluation]) => ({

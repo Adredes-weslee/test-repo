@@ -17,9 +17,6 @@ router.post('/', (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = req.body;
 
-    if (body?.simulation === true) {
-      process.env.SIMULATION_MODE = 'true';
-    }
 
     const { runId } = startRunAsync(body);
     respondOk(res, { runId }, 201);

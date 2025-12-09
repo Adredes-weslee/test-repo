@@ -12,7 +12,14 @@ export interface ValidationResult {
   rawOutput?: unknown;
 }
 
-const goal = 'Evaluate the learning plan for pedagogy and andragogy. Respond with JSON containing andragogyScore, pedagogyScore, pass, and reasons (array).';
+const goal =
+  'Evaluate the learning plan for pedagogy and andragogy. Respond with JSON containing andragogyScore, pedagogyScore, pass, and reasons (array).';
+
+const shouldSimulate = (task: AgentTask): boolean => {
+  const run = orchestratorStore.getRun(task.runId);
+  const runSim = (run?.input as any)?.simulation === true;
+  return runSim || isSimulationMode();
+};
 
 const extractTopic = (task: AgentTask): string | undefined => {
   const run = orchestratorStore.getRun(task.runId);
@@ -70,9 +77,7 @@ const normalizeResult = (data: unknown): ValidationResult => {
     andragogyScore: typeof typed.andragogyScore === 'number' ? typed.andragogyScore : fallback.andragogyScore,
     pedagogyScore: typeof typed.pedagogyScore === 'number' ? typed.pedagogyScore : fallback.pedagogyScore,
     pass: typeof typed.pass === 'boolean' ? typed.pass : fallback.pass,
-    reasons: Array.isArray(typed.reasons)
-      ? typed.reasons.map(String)
-      : fallback.reasons,
+    reasons: Array.isArray(typed.reasons) ? typed.reasons.map(String) : fallback.reasons,
     source: typed.source ?? fallback.source,
     rawOutput: typed.rawOutput ?? data,
   };
@@ -86,7 +91,13 @@ const runLive = async (task: AgentTask): Promise<ValidationResult> => {
   try {
     const result = await model.generateContent([{ text: prompt }]);
     const parsed = parseModelText(result.response.text());
-    return normalizeResult({ ...(parsed as object), source: 'gemini' });
+
+    // Ensure we always tag where this came from
+    const base = (parsed && typeof parsed === 'object')
+      ? { ...(parsed as object) }
+      : { rawOutput: parsed };
+
+    return normalizeResult({ ...base, source: 'gemini' });
   } catch (_error) {
     return runSimulation(task);
   }
@@ -98,7 +109,7 @@ export const validationAgent = async (task: AgentTask): Promise<ValidationResult
     return relevanceResult;
   }
 
-  if (isSimulationMode()) {
+  if (shouldSimulate(task)) {
     return runSimulation(task);
   }
 

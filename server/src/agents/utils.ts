@@ -23,28 +23,32 @@ export const buildPrompt = (task: AgentTask, goal: string): string => {
 
 export const loadGeminiModel = async (): Promise<GeminiModel | null> => {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
+  if (!apiKey) return null;
 
-  const moduleName: string = '@google/genai';
-  try {
-    const genAiModule = (await import(moduleName)) as {
-      GoogleGenerativeAI?: new (apiKey: string) => {
-        getGenerativeModel: (options: { model: string }) => GeminiModel;
-      };
-    };
+  const candidates = ['@google/genai', '@google/generative-ai'];
 
-    if (!genAiModule?.GoogleGenerativeAI) {
-      return null;
+  for (const moduleName of candidates) {
+    try {
+      const mod = (await import(moduleName)) as any;
+
+      // @google/genai style
+      if (mod?.GoogleGenerativeAI) {
+        const client = new mod.GoogleGenerativeAI(apiKey);
+        return client.getGenerativeModel({ model: 'gemini-2.5-pro' });
+      }
+
+      // @google/generative-ai style
+      if (mod?.GoogleGenerativeAI) {
+        const client = new mod.GoogleGenerativeAI(apiKey);
+        return client.getGenerativeModel({ model: 'gemini-2.5-pro' });
+      }
+    } catch {
+      // try next
     }
-
-    const client = new genAiModule.GoogleGenerativeAI(apiKey);
-    return client.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  } catch (error) {
-    console.warn('Gemini client unavailable, falling back to simulation.', error);
-    return null;
   }
+
+  console.warn('Gemini SDK not available; falling back to simulation.');
+  return null;
 };
 
 export const parseModelText = (text?: string): unknown => {

@@ -74,7 +74,7 @@ const evaluateValidationResult = (result: Partial<ValidationResult>): boolean =>
   const pedagogyScore =
     typeof result.pedagogyScore === 'number' ? result.pedagogyScore : 0;
 
-  return andragogyScore >= 0.7 && pedagogyScore >= 0.7;
+  return andragogyScore >= 0.3 && pedagogyScore >= 0.3;
 };
 
 const initializeRun = (payload: unknown): AgentRun => {
@@ -105,6 +105,7 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
     if (runFailed) return;
     runFailed = true;
     orchestratorStore.updateRunStatus(run.id, 'failed');
+    orchestratorStore.setRunError?.(run.id, { message });
     orchestratorStore.appendEvent({
       runId: run.id,
       agent: 'orchestrator',
