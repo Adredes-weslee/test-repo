@@ -65,3 +65,25 @@ export interface AppendEventInput {
   message: string;
   meta?: Record<string, unknown>;
 }
+
+export type FeedbackDecision = 'accept' | 'edit' | 'reject';
+
+export interface FeedbackEntry {
+  id: string;
+  runId: string;
+  artifactType?: 'curriculum' | 'lesson' | 'capstone' | string;
+  artifactId?: string;
+  decision: FeedbackDecision;
+  rating?: number;
+  comment?: string;
+  createdAt: Date;
+}
+
+export interface CreateFeedbackInput {
+  runId: string;
+  artifactType?: 'curriculum' | 'lesson' | 'capstone' | string;
+  artifactId?: string;
+  decision: FeedbackDecision;
+  rating?: number;
+  comment?: string;
+}

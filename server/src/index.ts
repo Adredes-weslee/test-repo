@@ -2,6 +2,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import { adminRouter } from './routes/admin';
+import { evaluationRouter } from './routes/evaluation';
 import { orchestrationsRouter } from './routes/orchestrations';
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.get('/health', (_req: unknown, res: { json: (body: unknown) => void }) => {
 
 app.use('/orchestrations', orchestrationsRouter);
 app.use('/admin', adminRouter);
+app.use('/evaluate', evaluationRouter);
 
 app.use(
   (
