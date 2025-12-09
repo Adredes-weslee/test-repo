@@ -6,6 +6,88 @@ import { appConfig } from '../config';
 import { simulateProgress } from '../utils';
 import type { OrchestrationRun } from '../api/orchestrator';
 
+type LegacyCurriculumLike = {
+  curriculumTitle?: string;
+  curriculumDescription?: string;
+  content?: { lessons?: string[]; capstoneProjects?: string[] };
+  modules?: any[];
+  tags?: string[];
+  learningOutcomes?: string[];
+  recommended?: boolean;
+};
+
+const normalizeLessonForUI = (raw: any) => ({
+  title: raw?.title ?? raw?.lessonTitle ?? 'Untitled Lesson',
+  description: raw?.description ?? raw?.lessonDescription ?? '',
+});
+
+const normalizeModuleForUI = (raw: any) => {
+  const lessons = Array.isArray(raw?.lessons)
+    ? raw.lessons.map(normalizeLessonForUI)
+    : raw?.lessons && typeof raw.lessons === 'object'
+      ? Object.keys(raw.lessons)
+          .filter(key => /^\d+$/.test(key))
+          .map(key => raw.lessons[key])
+          .filter(Boolean)
+          .map(normalizeLessonForUI)
+      : [];
+
+  return {
+    title: raw?.title ?? raw?.moduleTitle ?? 'Untitled Module',
+    description: raw?.description ?? raw?.moduleDescription ?? '',
+    lessons,
+  };
+};
+
+const normalizeCurriculumForUI = (raw: LegacyCurriculumLike & Record<string, any>) => {
+  const modules = Array.isArray(raw?.modules)
+    ? raw.modules.map(normalizeModuleForUI)
+    : raw?.modules && typeof raw.modules === 'object'
+      ? Object.keys(raw.modules)
+          .filter(key => /^\d+$/.test(key))
+          .map(key => raw.modules[key])
+          .filter(Boolean)
+          .map(normalizeModuleForUI)
+      : [];
+
+  const lessonTitles = modules.flatMap(module => module.lessons.map(lesson => lesson.title).filter(Boolean));
+  const contentLessons = Array.isArray(raw?.content?.lessons)
+    ? raw.content.lessons
+    : lessonTitles;
+
+  return {
+    ...raw,
+    title: raw?.title ?? raw?.curriculumTitle ?? 'Untitled Curriculum',
+    description: raw?.description ?? raw?.curriculumDescription ?? '',
+    modules,
+    tags: Array.isArray(raw?.tags) ? raw.tags : [],
+    learningOutcomes: Array.isArray(raw?.learningOutcomes) ? raw.learningOutcomes : [],
+    recommended: typeof raw?.recommended === 'boolean' ? raw.recommended : false,
+    content: {
+      lessons: Array.isArray(contentLessons) ? contentLessons : [],
+      capstoneProjects: Array.isArray(raw?.content?.capstoneProjects)
+        ? raw.content.capstoneProjects
+        : [],
+    },
+  };
+};
+
+const normalizeCurriculumsForUI = (
+  rawCurriculums: unknown,
+  agentThoughts: unknown
+): GenerateCurriculumResponse => {
+  const curriculumsArray = Array.isArray(rawCurriculums)
+    ? rawCurriculums
+    : rawCurriculums
+      ? [rawCurriculums]
+      : [];
+
+  return {
+    curriculums: curriculumsArray.map(raw => normalizeCurriculumForUI(raw as any)),
+    agentThoughts: Array.isArray(agentThoughts) ? agentThoughts : [],
+  };
+};
+
 interface FileData { mimeType: string; data: string; }
 type FilterOptions = { [key: string]: string; };
 
@@ -49,14 +131,14 @@ class DiscoveryService {
 
     const mapRunToCurriculum = (run: OrchestrationRun): GenerateCurriculumResponse => {
       const generationOutput = (run.output as any)?.generation ?? run.output ?? {};
-      const curriculums =
+      const rawCurriculums =
         generationOutput.curriculums ??
         (generationOutput.curriculum ? [generationOutput.curriculum] : []);
 
-      return {
-        curriculums,
-        agentThoughts: generationOutput.agentThoughts ?? generationOutput.thoughts ?? [],
-      };
+      return normalizeCurriculumsForUI(
+        rawCurriculums,
+        generationOutput.agentThoughts ?? generationOutput.thoughts ?? []
+      );
     };
 
     return (async () => {
