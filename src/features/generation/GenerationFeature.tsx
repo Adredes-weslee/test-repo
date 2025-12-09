@@ -9,6 +9,7 @@ import { useCurriculumStore } from '../../store';
 import { GenerationDebugPanel } from '../../components/orchestrator/GenerationDebugPanel';
 import { generateCurriculum as generateCurriculumApi } from '../../api/generateCurriculum';
 import { getLastOrchestratorDebug, mergeLastOrchestratorDebug } from '../../services/orchestratorDebugStore';
+import type { OrchestratorDebugSnapshot } from '../../services/orchestratorDebugStore';
 
 const GenerationFeature: React.FC = () => {
     const hookValues = useGeneration();
@@ -27,7 +28,7 @@ const GenerationFeature: React.FC = () => {
     } = hookValues;
     const { startGenerationWithPrompt, setStartGenerationWithPrompt } = useCurriculumStore();
     const [isDebugOpen, setIsDebugOpen] = useState(false);
-    const [debugSnapshot, setDebugSnapshot] = useState<any | null>(null);
+    const [debugSnapshot, setDebugSnapshot] = useState<OrchestratorDebugSnapshot | null>(null);
     const [isComparing, setIsComparing] = useState(false);
 
     useEffect(() => {
@@ -41,6 +42,12 @@ const GenerationFeature: React.FC = () => {
         setDebugSnapshot(getLastOrchestratorDebug());
         setIsDebugOpen(true);
     };
+
+    useEffect(() => {
+        if (isDebugOpen) {
+            setDebugSnapshot(getLastOrchestratorDebug());
+        }
+    }, [isDebugOpen]);
 
     const closeDebugPanel = () => setIsDebugOpen(false);
 

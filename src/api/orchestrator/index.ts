@@ -90,3 +90,39 @@ export const getOrchestrationLogs = async (runId: string): Promise<Orchestration
 
   return handleOrchestratorResponse<OrchestrationLogs>(response);
 };
+
+export const getOrchestrationTasks = async (runId: string): Promise<any[]> => {
+  const response = await fetch(buildUrl(`/orchestrations/${runId}/tasks`));
+
+  return handleOrchestratorResponse<any[]>(response);
+};
+
+export const getOrchestrationLogsCompact = async (runId: string): Promise<any[]> => {
+  const response = await fetch(buildUrl(`/orchestrations/${runId}/logs/compact`));
+
+  return handleOrchestratorResponse<any[]>(response);
+};
+
+export const getHealth = async (): Promise<{ simulationMode?: boolean }> => {
+  const response = await fetch(buildUrl('/health'));
+
+  return handleOrchestratorResponse<{ simulationMode?: boolean }>(response);
+};
+
+export const getAdminQueue = async (): Promise<any> => {
+  const response = await fetch(buildUrl('/admin/queue'));
+
+  return handleOrchestratorResponse<any>(response);
+};
+
+export const getAdminTasks = async (): Promise<any> => {
+  const response = await fetch(buildUrl('/admin/tasks'));
+
+  return handleOrchestratorResponse<any>(response);
+};
+
+export const getOrchestrationFeedback = async (runId: string): Promise<any> => {
+  const response = await fetch(buildUrl(`/orchestrations/${runId}/feedback`));
+
+  return handleOrchestratorResponse<any>(response);
+};

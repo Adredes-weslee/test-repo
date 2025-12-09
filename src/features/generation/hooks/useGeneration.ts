@@ -5,7 +5,7 @@ import { isDifficultyTag, lessonPlanToMarkdown, updateFileContentInTree } from '
 import { useCurriculumStore, useContentLibraryStore, useToastStore, useNavigationStore } from '../../../store';
 import { generationService, projectService, discoveryService } from '../../../services';
 import { isOrchestratorEnabled } from '../../../api/orchestrator';
-import { setLastOrchestratorDebug } from '../../../services/orchestratorDebugStore';
+import { mergeLastOrchestratorDebug } from '../../../services/orchestratorDebugStore';
 import type { Curriculum, LessonPlan, GenerationOptions, DetailedProjectData, CapstoneProject, FileNode, RegenerationPart, Exercise, AndragogicalAnalysis } from '../../../types';
 
 type GenerationMode = 'idle' | 'course' | 'capstone';
@@ -238,7 +238,7 @@ export const useGeneration = () => {
                 const curriculum = response.curriculums.find(c => c.recommended) || response.curriculums[0];
                 if (!curriculum) throw new Error("No curriculum generated");
 
-                setLastOrchestratorDebug({
+                mergeLastOrchestratorDebug({
                     enabled: isOrchestratorEnabled,
                     input: { topic: prompt, filters, filesCount: fileData.length, files: fileData },
                     orchestratorOrFinalGeneration: curriculum,

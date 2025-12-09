@@ -1,5 +1,6 @@
 type OrchestratorDebugSnapshot = {
   enabled: boolean;
+  orchestrationId?: string | null;
   input?: {
     topic: string;
     filters: Record<string, string>;
@@ -9,6 +10,17 @@ type OrchestratorDebugSnapshot = {
   };
   // The final curriculum payload used by the Generation UI
   orchestratorOrFinalGeneration?: any;
+
+  // Orchestrator artifacts
+  run?: any | null;
+  tasks?: any[];
+  logs?: any[];
+  logsCompact?: any[];
+  outputs?: { discovery?: any; generation?: any; validation?: any };
+  mode?: 'simulation' | 'live' | 'unknown';
+  queue?: any[];
+  adminTasks?: any[];
+  feedback?: any;
 
   // Only populated after user triggers compare
   directGeneration?: any;
