@@ -1,10 +1,11 @@
 import { fetchTrendingTopics, fetchTrendingCapstoneTopics, generateCurriculum, generateCapstoneProjects, fetchIndustryTrends, fetchTrendData, fetchTopicDetails } from '../api';
 import type { GenerateCurriculumResponse, IndustryTrend } from '../types';
 import type { GenerateCapstoneProjectsResponse } from '../api/generateCapstoneProjects';
-import { getOrchestrationStatus, isOrchestratorEnabled, startOrchestration } from '../api/orchestrator';
+import { getOrchestrationLogs, getOrchestrationStatus, isOrchestratorEnabled, startOrchestration } from '../api/orchestrator';
 import { appConfig } from '../config';
 import { simulateProgress } from '../utils';
 import type { OrchestrationRun } from '../api/orchestrator';
+import { setLastOrchestratorDebug } from './orchestratorDebugStore';
 
 type LegacyCurriculumLike = {
   curriculumTitle?: string;
@@ -119,7 +120,26 @@ class DiscoveryService {
     onProgress: (progress: number) => void
   ): Promise<GenerateCurriculumResponse> {
     if (!isOrchestratorEnabled) {
-      return generateCurriculum(topic, filters, files, onProgress);
+      return (async () => {
+        const directGeneration = await generateCurriculum(topic, filters, files, onProgress);
+
+        try {
+          setLastOrchestratorDebug({
+            enabled: false,
+            input: { topic, filters, filesCount: files.length },
+            orchestrationId: null,
+            run: null,
+            logs: [],
+            orchestratorGeneration: null,
+            directGeneration,
+            directError: null,
+          });
+        } catch (error) {
+          console.warn('Failed to record orchestrator debug info for direct generation', error);
+        }
+
+        return directGeneration;
+      })();
     }
 
     const progressInterval = simulateProgress(appConfig.SIMULATED_PROGRESS_DURATIONS.discovery, onProgress);
@@ -142,9 +162,12 @@ class DiscoveryService {
     };
 
     return (async () => {
+      let orchestrationId: string | null = null;
+      let run: OrchestrationRun | null = null;
+
       try {
         const { id, runId } = await startOrchestration({ type: 'course', topic, filters, files });
-        const orchestrationId = id || runId;
+        orchestrationId = id || runId;
 
         if (!orchestrationId) {
           throw new Error('Failed to start curriculum orchestration');
@@ -152,7 +175,7 @@ class DiscoveryService {
 
         const startTime = Date.now();
         const maxWaitTime = 600_000;
-        let run = await getOrchestrationStatus(orchestrationId);
+        run = await getOrchestrationStatus(orchestrationId);
 
         while (!isTerminalStatus(run.status)) {
           if (Date.now() - startTime > maxWaitTime) {
@@ -163,6 +186,42 @@ class DiscoveryService {
         }
 
         clearInterval(progressInterval);
+
+        if (!run) {
+          throw new Error('Curriculum orchestration returned no run data');
+        }
+
+        let logs: { logs?: string[] } | null = null;
+        try {
+          logs = orchestrationId ? await getOrchestrationLogs(orchestrationId) : null;
+        } catch (error) {
+          console.warn('Failed to fetch orchestration logs', error);
+        }
+
+        let directGeneration: GenerateCurriculumResponse | null = null;
+        let directError: string | null = null;
+
+        try {
+          directGeneration = await generateCurriculum(topic, filters, files, () => {});
+        } catch (error) {
+          directError = error instanceof Error ? error.message : String(error);
+        }
+
+        try {
+          const generationOutput = (run.output as any)?.generation ?? run.output ?? {};
+          setLastOrchestratorDebug({
+            enabled: true,
+            input: { topic, filters, filesCount: files.length },
+            orchestrationId,
+            run,
+            logs: logs?.logs ?? [],
+            orchestratorGeneration: generationOutput,
+            directGeneration,
+            directError,
+          });
+        } catch (error) {
+          console.warn('Failed to record orchestrator debug info', error);
+        }
 
         if (run.status === 'completed') {
           onProgress(100);
