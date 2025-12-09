@@ -7,14 +7,18 @@ import {
   AgentTask,
   AgentTaskStatus,
   AppendEventInput,
+  CreateFeedbackInput,
   CreateRunInput,
   CreateTaskInput,
+  FeedbackEntry,
 } from './types';
 
 export class OrchestratorStore {
   private runs = new Map<string, AgentRun>();
   private tasks = new Map<string, AgentTask>();
   private events: AgentEvent[] = [];
+  private feedbackEntries: FeedbackEntry[] = [];
+  private evaluationResults = new Map<string, unknown>();
 
   createRun(input: CreateRunInput = {}): AgentRun {
     const now = new Date();
@@ -139,6 +143,42 @@ export class OrchestratorStore {
     return this.events
       .filter((event) => event.runId === runId)
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  addFeedback(input: CreateFeedbackInput): FeedbackEntry {
+    const feedback: FeedbackEntry = {
+      id: uuidv4(),
+      runId: input.runId,
+      artifactType: input.artifactType,
+      artifactId: input.artifactId,
+      decision: input.decision,
+      rating: input.rating,
+      comment: input.comment,
+      createdAt: new Date(),
+    };
+
+    this.feedbackEntries.push(feedback);
+    return feedback;
+  }
+
+  listFeedbackByRun(runId: string): FeedbackEntry[] {
+    return this.feedbackEntries
+      .filter((entry) => entry.runId === runId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  listAllFeedback(): FeedbackEntry[] {
+    return [...this.feedbackEntries].sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+    );
+  }
+
+  setRunEvaluation(runId: string, evaluation: unknown): void {
+    this.evaluationResults.set(runId, evaluation);
+  }
+
+  getRunEvaluation(runId: string): unknown {
+    return this.evaluationResults.get(runId);
   }
 }
 
