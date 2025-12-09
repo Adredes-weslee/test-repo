@@ -49,9 +49,12 @@ class DiscoveryService {
 
     const mapRunToCurriculum = (run: OrchestrationRun): GenerateCurriculumResponse => {
       const generationOutput = (run.output as any)?.generation ?? run.output ?? {};
+      const curriculums =
+        generationOutput.curriculums ??
+        (generationOutput.curriculum ? [generationOutput.curriculum] : []);
 
       return {
-        curriculums: generationOutput.curriculums ?? [],
+        curriculums,
         agentThoughts: generationOutput.agentThoughts ?? generationOutput.thoughts ?? [],
       };
     };
