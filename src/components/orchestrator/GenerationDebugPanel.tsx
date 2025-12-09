@@ -73,13 +73,18 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
         generation: (snapshot?.run as any)?.output?.generation,
         validation: (snapshot?.run as any)?.output?.validation,
     };
-    const tasks = Array.isArray(snapshot?.tasks) ? snapshot?.tasks : [];
+    const tasks = Array.isArray(snapshot?.tasks) ? snapshot.tasks : [];
     const compactLogs = capLogs(normalizeLogs(snapshot?.logsCompact ?? snapshot?.logs));
     const fallbackLogs = capLogs(normalizeLogs(snapshot?.logs));
     const logLines = compactLogs.length > 0 ? compactLogs : fallbackLogs;
     const validation = stagedOutputs?.validation ?? {};
     const validationHasSummary = validation?.pass !== undefined || validation?.andragogyScore !== undefined || validation?.pedagogyScore !== undefined || validation?.reasons !== undefined;
-    const modeLabel = snapshot?.mode ?? 'unknown';
+
+    const renderMode = () => {
+        if (snapshot?.mode && snapshot.mode !== 'unknown') return snapshot.mode;
+        if (snapshot?.mode === undefined || snapshot?.mode === null) return 'unknown (health unavailable)';
+        return 'unknown';
+    };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         // Only close when clicking the backdrop itself (not the modal content)
@@ -154,7 +159,7 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                         </div>
                         <div className="p-3 rounded border border-slate-200 bg-slate-50">
                             <p className="font-semibold mb-1">Mode</p>
-                            <p className="text-slate-600">{modeLabel}</p>
+                            <p className="text-slate-600">{renderMode()}</p>
                         </div>
                     </div>
 
@@ -217,9 +222,11 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                         </div>
                     </div>
 
-                    {tasks.length > 0 && (
-                        <div className="p-3 rounded border border-slate-200 bg-white">
-                            <p className="font-semibold mb-2">Tasks</p>
+                    <div className="p-3 rounded border border-slate-200 bg-white">
+                        <p className="font-semibold mb-2">Tasks</p>
+                        {tasks.length === 0 ? (
+                            <p className="text-xs text-slate-500">No tasks returned by API for this run.</p>
+                        ) : (
                             <div className="space-y-2">
                                 {tasks.map((task, idx) => {
                                     const duration = task?.durationMs ?? task?.duration ?? task?.elapsedMs;
@@ -233,8 +240,8 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                                     );
                                 })}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     {logLines.length > 0 && (
                         <div className="p-3 rounded border border-slate-200 bg-white">
