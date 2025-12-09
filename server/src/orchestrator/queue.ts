@@ -1,3 +1,4 @@
+import { agentHandlers } from '../agents';
 import { orchestratorStore, OrchestratorStore } from './store';
 import { AgentTask, CreateTaskInput } from './types';
 
@@ -125,15 +126,20 @@ export class InProcessQueue {
         type: 'task_started',
         message: 'Task started',
       });
+
+      this.store.appendEvent({
+        runId: task.runId,
+        taskId: task.id,
+        agent: task.agent ?? 'unknown',
+        type: 'agent_started',
+        message: 'Agent handler started',
+      });
     }
 
     try {
       const handler = this.resolveHandler(task);
       const result = await handler(task as AgentTask);
       this.store.updateTaskStatus(taskId, 'succeeded', result);
-      if (task?.runId) {
-        this.store.updateRunStatus(task.runId, 'completed');
-      }
 
       if (task) {
         this.store.appendEvent({
@@ -143,14 +149,28 @@ export class InProcessQueue {
           type: 'task_succeeded',
           message: 'Task succeeded',
         });
+
+        this.store.appendEvent({
+          runId: task.runId,
+          taskId: task.id,
+          agent: task.agent ?? 'unknown',
+          type: 'agent_output_ready',
+          message: 'Agent produced output',
+          meta: { output: result },
+        });
+
+        this.store.appendEvent({
+          runId: task.runId,
+          taskId: task.id,
+          agent: task.agent ?? 'unknown',
+          type: 'agent_completed',
+          message: 'Agent completed successfully',
+        });
       }
 
       this.completedCount += 1;
     } catch (error) {
       this.store.updateTaskStatus(taskId, 'failed');
-      if (task?.runId) {
-        this.store.updateRunStatus(task.runId, 'failed');
-      }
 
       if (task) {
         this.store.appendEvent({
@@ -159,6 +179,14 @@ export class InProcessQueue {
           agent: task.agent ?? 'unknown',
           type: 'task_failed',
           message: error instanceof Error ? error.message : 'Task failed',
+        });
+
+        this.store.appendEvent({
+          runId: task.runId,
+          taskId: task.id,
+          agent: task.agent ?? 'unknown',
+          type: 'agent_failed',
+          message: error instanceof Error ? error.message : 'Agent failed',
         });
       }
 
@@ -190,7 +218,5 @@ export class InProcessQueue {
 }
 
 export const inProcessQueue = new InProcessQueue({
-  handlers: {
-    default: async () => undefined,
-  },
+  handlers: agentHandlers,
 });
