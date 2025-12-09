@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useEffect } from 'react';
 import { RagInfoPanel } from './RagInfoPanel';
 import { CurriculumCard } from './CurriculumCard';
@@ -12,6 +10,8 @@ import { Search, Modification } from '../../../components/icons/index';
 import { Button } from '../../../components/ui';
 import type { Curriculum, CapstoneProject } from '../../../types';
 import { useAppLogic } from '../../../hooks';
+import { OrchestratorDebugPanel } from '../../../components/orchestrator/OrchestratorDebugPanel';
+import { getLastOrchestratorDebug } from '../../../services/orchestratorDebugStore';
 
 export const ResultsView: React.FC<{ 
   curriculumData: Curriculum[];
@@ -23,6 +23,7 @@ export const ResultsView: React.FC<{
   const { selectCurriculumAndSwitchToGeneration, selectCapstoneProjectAndSwitchToGeneration } = useAppLogic();
   const [activeCurriculumTitle, setActiveCurriculumTitle] = useState('');
   const [activeProjectId, setActiveProjectId] = useState<number | null>(null);
+  const debugData = getLastOrchestratorDebug();
   
   const isProjectResults = projectData && projectData.length > 0;
 
@@ -97,20 +98,35 @@ export const ResultsView: React.FC<{
           )}
         </div>
       </div>
-      
-      {isProjectResults && activeProject && (
-        <ProjectDetailView 
-          project={activeProject} 
-          onGenerate={() => selectCapstoneProjectAndSwitchToGeneration(activeProject)} 
+
+      <div className="flex flex-col gap-6 w-full lg:w-[420px]">
+        {isProjectResults && activeProject && (
+          <ProjectDetailView
+            project={activeProject}
+            onGenerate={() => selectCapstoneProjectAndSwitchToGeneration(activeProject)}
+          />
+        )}
+
+        {!isProjectResults && activeCurriculum && (
+          <CurriculumDetailView
+            curriculum={activeCurriculum}
+            onGenerate={() => selectCurriculumAndSwitchToGeneration(activeCurriculum)}
+          />
+        )}
+
+        <OrchestratorDebugPanel
+          enabled={Boolean(debugData?.enabled)}
+          topic={debugData?.input?.topic ?? ''}
+          filters={debugData?.input?.filters ?? {}}
+          filesCount={debugData?.input?.filesCount ?? 0}
+          orchestrationId={debugData?.orchestrationId ?? null}
+          run={debugData?.run ?? null}
+          logs={debugData?.logs ?? []}
+          orchestratorGeneration={debugData?.orchestratorGeneration}
+          directGeneration={debugData?.directGeneration}
+          directError={debugData?.directError ?? null}
         />
-      )}
-      
-      {!isProjectResults && activeCurriculum && (
-        <CurriculumDetailView 
-          curriculum={activeCurriculum} 
-          onGenerate={() => selectCurriculumAndSwitchToGeneration(activeCurriculum)} 
-        />
-      )}
+      </div>
     </div>
   );
 };
