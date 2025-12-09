@@ -112,23 +112,35 @@ export const ContentItemSchema = z.object({
 });
 
 // For Curriculum
+export const CurriculumLessonSchema = z.object({
+  title: z.string(),
+  description: z.string().optional().default(''),
+}).passthrough();
+
+export const CurriculumModuleSchema = z.object({
+  title: z.string(),
+  description: z.string().optional().default(''),
+  lessons: z.array(CurriculumLessonSchema).default([]),
+}).passthrough();
+
 export const CurriculumContentSchema = z.object({
-    lessons: z.array(z.string()),
-    capstoneProjects: z.array(z.string()).optional(),
-});
+  lessons: z.array(z.string()).default([]),
+  capstoneProjects: z.array(z.string()).optional().default([]),
+}).default({ lessons: [], capstoneProjects: [] });
 
 export const CurriculumSchema = z.object({
   title: z.string(),
-  description: z.string(),
-  tags: z.array(z.string()),
-  learningOutcomes: z.array(z.string()),
-  recommended: z.boolean(),
+  description: z.string().optional().default(''),
+  modules: z.array(CurriculumModuleSchema).default([]),
+  tags: z.array(z.string()).default([]),
+  learningOutcomes: z.array(z.string()).default([]),
+  recommended: z.boolean().default(false),
   content: CurriculumContentSchema,
-});
+}).passthrough();
 
 export const GenerateCurriculumResponseSchema = z.object({
   curriculums: z.array(CurriculumSchema),
-  agentThoughts: z.array(z.string()),
+  agentThoughts: z.array(z.string()).default([]),
 });
 
 // For Capstone Projects
