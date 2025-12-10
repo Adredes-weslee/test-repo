@@ -48,12 +48,33 @@ const waitForTaskCompletion = async (
   });
 };
 
-const buildGenerationDescription = (discoveryResult: unknown): string => {
+const buildStrategySelectionDescription = (discoveryResult: unknown): string => {
   const summary = summarizeOutput(
+    discoveryResult,
+    'Select strategy bundles grounded in andragogy guidelines.'
+  );
+  return `Choose learning design strategy bundles using discovery insights. Discovery summary: ${summary}`;
+};
+
+const buildGenerationDescription = (
+  discoveryResult: unknown,
+  strategySelectionResult: unknown
+): string => {
+  const discoverySummary = summarizeOutput(
     discoveryResult,
     'Use the discovery findings to inform generation.'
   );
-  return `Generate a curriculum plan informed by discovery insights. Summary: ${summary}`;
+
+  const strategySummary = summarizeOutput(
+    strategySelectionResult,
+    'Prioritize the selected strategy bundles.'
+  );
+
+  return [
+    'Generate a curriculum plan informed by discovery insights.',
+    `Discovery summary: ${discoverySummary}`,
+    `Strategy selection summary: ${strategySummary}`,
+  ].join(' ');
 };
 
 const buildValidationDescription = (generationResult: unknown): string => {
@@ -126,10 +147,24 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
       emitRunStarted
     );
 
+    const strategySelectionTask = inProcessQueue.enqueue({
+      runId: run.id,
+      agent: 'strategy-selection',
+      description: buildStrategySelectionDescription(discoveryCompleted.result),
+    });
+
+    const strategySelectionCompleted = await waitForTaskCompletion(
+      strategySelectionTask.id,
+      emitRunStarted
+    );
+
     const generationTask = inProcessQueue.enqueue({
       runId: run.id,
       agent: 'generation',
-      description: buildGenerationDescription(discoveryCompleted.result),
+      description: buildGenerationDescription(
+        discoveryCompleted.result,
+        strategySelectionCompleted.result
+      ),
     });
 
     const generationCompleted = await waitForTaskCompletion(
@@ -159,6 +194,7 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
     orchestratorStore.updateRunStatus(run.id, 'completed');
     orchestratorStore.setRunOutput(run.id, {
       discovery: discoveryCompleted.result,
+      strategySelection: strategySelectionCompleted.result,
       generation: generationCompleted.result,
       validation: validationResult,
     });

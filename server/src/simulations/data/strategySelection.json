@@ -1,0 +1,13 @@
+{
+  "strategyBundles": [
+    "Authentic Alignment",
+    "Guided Participation",
+    "Learner Agency & Reflection"
+  ],
+  "rationales": [
+    "Aligns outcomes, activities, and assessments to reflect real-world learner goals.",
+    "Provides scaffolded steps and mentorship-style guidance appropriate to learner level.",
+    "Encourages reflection and agency so learners can adapt strategies to their context."
+  ],
+  "confidence": 0.84
+}
