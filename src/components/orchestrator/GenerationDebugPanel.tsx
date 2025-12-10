@@ -17,7 +17,7 @@ type GenerationDebugPanelProps = {
     isOpen: boolean;
     onClose: () => void;
     snapshot: OrchestratorDebugSnapshot | null;
-    onRunDirectCompare: () => Promise<void>;
+    onRunDirectCompare?: () => Promise<void>;
     isComparing: boolean;
 };
 
@@ -119,7 +119,7 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-auto border border-slate-200">
                 
                 {/* Sticky header so Close never disappears */}
-                <div className="sticky top-0 z-10 bg-white flex items-center justify-between p-4 border-b border-slate-200">
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur flex items-center justify-between p-4 border-b border-slate-200">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">Generation Debug</h2>
                         {snapshot?.updatedAt && (
@@ -129,14 +129,16 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="secondary"
-                            size="small"
-                            onClick={onRunDirectCompare}
-                            disabled={isComparing || !snapshot?.input?.topic}
-                        >
-                            {isComparing ? 'Comparing...' : 'Run Direct Compare'}
-                        </Button>
+                        {onRunDirectCompare && (
+                            <Button
+                                variant="secondary"
+                                size="small"
+                                onClick={onRunDirectCompare}
+                                disabled={isComparing || !snapshot?.input?.topic}
+                            >
+                                {isComparing ? 'Comparing...' : 'Run Direct Compare'}
+                            </Button>
+                        )}
                         <Button variant="secondary" size="small" onClick={onClose}>
                             Close
                         </Button>
