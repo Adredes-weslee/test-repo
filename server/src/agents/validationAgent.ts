@@ -1,6 +1,12 @@
 import validationFixture from '../simulations/data/validation.json';
 import { AgentTask } from '../orchestrator/types';
-import { buildPrompt, isSimulationMode, loadGeminiModel, parseModelText } from './utils';
+import {
+  buildPrompt,
+  isSimulationMode,
+  loadAndragogyGuidelinesExcerpt,
+  loadGeminiModel,
+  parseModelText,
+} from './utils';
 import { orchestratorStore } from '../orchestrator/store';
 
 export interface ValidationResult {
@@ -83,6 +89,23 @@ const checkRelevance = (task: AgentTask): ValidationResult | null => {
   };
 };
 
+const getStrategySelectionSummary = (task: AgentTask): string | null => {
+  const selectionTask = orchestratorStore
+    .listTasksByRun(task.runId)
+    .find((entry) => entry.agent === 'strategy-selection');
+
+  const result = selectionTask?.result as any;
+  if (!result || typeof result !== 'object') return null;
+
+  const bundles = Array.isArray(result.strategyBundles)
+    ? result.strategyBundles.filter((b: any) => typeof b === 'string')
+    : [];
+
+  if (!bundles.length) return null;
+
+  return `Selected strategy bundles: ${bundles.join(', ')}`;
+};
+
 const runSimulation = (_task: AgentTask): ValidationResult => {
   return {
     ...validationFixture,
@@ -109,7 +132,28 @@ const runLive = async (task: AgentTask): Promise<ValidationResult> => {
   const model = await loadGeminiModel();
   if (!model) return runSimulation(task);
 
-  const prompt = buildPrompt(task, goal);
+  const guidelines = await loadAndragogyGuidelinesExcerpt();
+  const strategyLine = getStrategySelectionSummary(task);
+  const basePrompt = buildPrompt(task, goal);
+
+  const prompt = [
+    basePrompt,
+    strategyLine ?? undefined,
+    'You MUST ground your scoring in the guidelines below.',
+    'If selected strategy bundles are provided, verify the generated plan',
+    'reflects them and mention alignment/misalignment in reasons.',
+    '',
+    'Output requirements:',
+    '- andragogyScore and pedagogyScore must be numbers between 0 and 1.',
+    '- pass must be consistent with scores and reasons.',
+    '- reasons must be 3–7 short strings, reference guideline principles in plain language, optionally reference alignment with the selected strategy bundles, and must not quote long guideline passages.',
+    '',
+    '--- ANDRAGOGY_GUIDELINES (full) ---',
+    guidelines,
+    '--- END GUIDELINES ---',
+  ]
+    .filter(Boolean)
+    .join('\n');
   try {
     const result = await model.generateContent([{ text: prompt }]);
     const parsed = parseModelText(result.response.text());
