@@ -93,3 +93,25 @@ export interface CreateFeedbackInput {
   rating?: number;
   comment?: string;
 }
+
+export type StrategyBundle =
+  | 'Authentic Alignment'
+  | 'Guided Participation'
+  | 'Learner Agency & Reflection'
+  | 'Collaborative Practice'
+  | 'Multimedia & Accessibility';
+
+export interface StrategySelectionResult {
+  strategyBundles: StrategyBundle[];
+  rationales: string[];
+  confidence?: number;
+  source?: string;
+  rawOutput?: unknown;
+}
+
+export interface RunOutput {
+  discovery?: unknown;
+  strategySelection?: StrategySelectionResult;
+  generation?: unknown;
+  validation?: unknown;
+}
