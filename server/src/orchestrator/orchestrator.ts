@@ -56,6 +56,9 @@ const buildStrategySelectionDescription = (discoveryResult: unknown): string => 
   return `Choose learning design strategy bundles using discovery insights. Discovery summary: ${summary}`;
 };
 
+const buildStrategySelectionSummary = (strategySelectionResult: unknown): string =>
+  summarizeOutput(strategySelectionResult, 'Focus on selected bundles and rationale.');
+
 const buildGenerationDescription = (
   discoveryResult: unknown,
   strategySelectionResult: unknown
@@ -77,12 +80,26 @@ const buildGenerationDescription = (
   ].join(' ');
 };
 
-const buildValidationDescription = (generationResult: unknown): string => {
-  const summary = summarizeOutput(
+const buildValidationDescription = (
+  generationResult: unknown,
+  strategySelectionResult?: unknown
+): string => {
+  const genSummary = summarizeOutput(
     generationResult,
     'Evaluate the generated curriculum for quality.'
   );
-  return `Validate the generated curriculum. Summary: ${summary}`;
+
+  const strategySummary = strategySelectionResult
+    ? buildStrategySelectionSummary(strategySelectionResult)
+    : '';
+
+  return [
+    'Validate the generated curriculum against andragogy and pedagogy expectations.',
+    `Generation summary: ${genSummary}`,
+    strategySelectionResult ? `Strategy selection summary: ${strategySummary}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 };
 
 const evaluateValidationResult = (result: Partial<ValidationResult>): boolean => {
@@ -179,7 +196,10 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
       runId: run.id,
       agent: 'validation',
       displayName: 'Validation',
-      description: buildValidationDescription(generationCompleted.result),
+      description: buildValidationDescription(
+        generationCompleted.result,
+        strategySelectionCompleted.result
+      ),
     });
 
     const validationCompleted = await waitForTaskCompletion(
