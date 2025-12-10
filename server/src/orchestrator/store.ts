@@ -84,6 +84,7 @@ export class OrchestratorStore {
       runId: input.runId,
       status: 'queued',
       description: input.description,
+      displayName: input.displayName,
       agent: input.agent,
       createdAt: now,
       updatedAt: now,

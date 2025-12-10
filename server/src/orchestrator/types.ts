@@ -33,6 +33,7 @@ export interface AgentTask {
   runId: string;
   status: AgentTaskStatus;
   description?: string;
+  displayName?: string;
   agent?: string;
   result?: unknown;
   createdAt: Date;
@@ -59,6 +60,7 @@ export interface CreateRunInput {
 export interface CreateTaskInput {
   runId: string;
   description?: string;
+  displayName?: string;
   agent?: string;
   meta?: Record<string, unknown>;
 }

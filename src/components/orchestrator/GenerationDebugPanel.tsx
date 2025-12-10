@@ -7,6 +7,7 @@ type AgentTask = {
     runId: string;
     status: string;
     description?: string;
+    displayName?: string;
     agent?: string;
     result?: unknown;
     createdAt?: string;
@@ -24,7 +25,7 @@ type GenerationDebugPanelProps = {
 const formatJson = (data: any) => data === undefined ? 'N/A' : JSON.stringify(data, null, 2);
 
 const getTaskLabel = (task?: Partial<AgentTask>) =>
-    task?.description ?? task?.agent ?? task?.id ?? 'Unknown';
+    task?.displayName ?? task?.agent ?? task?.id ?? 'Unknown';
 
 const extractCurriculums = (payload: any): any[] => {
     if (!payload) return [];
@@ -84,6 +85,7 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
     const directSummary = buildSummary(snapshot?.directGeneration);
     const stagedOutputs = snapshot?.outputs ?? {
         discovery: (snapshot?.run as any)?.output?.discovery,
+        strategySelection: (snapshot?.run as any)?.output?.strategySelection,
         generation: (snapshot?.run as any)?.output?.generation,
         validation: (snapshot?.run as any)?.output?.validation,
     };
@@ -194,6 +196,12 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                                 </pre>
                             </details>
                             <details className="border border-slate-200 rounded">
+                                <summary className="cursor-pointer px-3 py-2 font-medium">Strategy Selection Output</summary>
+                                <pre className="bg-slate-900 text-slate-100 p-3 text-xs overflow-auto max-h-60">
+                                    {formatJson(stagedOutputs?.strategySelection)}
+                                </pre>
+                            </details>
+                            <details className="border border-slate-200 rounded">
                                 <summary className="cursor-pointer px-3 py-2 font-medium">Generation Output</summary>
                                 <pre className="bg-slate-900 text-slate-100 p-3 text-xs overflow-auto max-h-60">
                                     {formatJson(stagedOutputs?.generation)}
@@ -254,6 +262,11 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                                     return (
                                         <div key={task?.id ?? idx} className="border border-slate-200 rounded p-2 text-xs bg-slate-50">
                                             <p><span className="font-semibold">Name:</span> {getTaskLabel(task)}</p>
+                                            {task?.description && (
+                                                <p className="text-[11px] text-slate-600 mt-1">
+                                                    <span className="font-semibold">Description:</span> {task.description}
+                                                </p>
+                                            )}
                                             {task?.agent && <p className="text-[11px] text-slate-500">Agent: {task.agent}</p>}
                                             <p><span className="font-semibold">Status:</span> {task?.status ?? 'N/A'}</p>
                                             {duration !== undefined && <p><span className="font-semibold">Duration:</span> {duration} ms</p>}
