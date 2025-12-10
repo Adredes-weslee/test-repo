@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Curriculum, LessonPlan, GenerationOptions, AndragogicalAnalysis } from '../../../types';
 import type { RegenerationPart } from '../../../types/Regeneration';
+import type { OrchestratorDebugSnapshot } from '../../../services/orchestratorDebugStore';
 import { getRegenerationPartId } from '../../../types';
 import { LessonNavigator, RegeneratePopover, Button, EditModeFooter, Collapsible } from '../../../components/ui';
 import { SaveContentPopover } from './SaveContentPopover';
@@ -16,6 +17,7 @@ interface LessonPlanViewerProps {
     progress: number;
     lessonPlans: (LessonPlan | null)[] | null;
     currentCurriculum: Curriculum | null;
+    debugSnapshot?: OrchestratorDebugSnapshot | null;
     generationOptions: GenerationOptions | null;
     generationDate: string | null;
     regeneratingPart: string | null;
@@ -43,6 +45,7 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
     progress,
     lessonPlans,
     currentCurriculum,
+    debugSnapshot,
     generationOptions,
     generationDate,
     regeneratingPart,
@@ -176,8 +179,23 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
     const numLessons = currentCurriculum?.content?.lessons?.length ?? 0;
     const currentGeneratingLessonIndex = numLessons > 0 ? Math.min(numLessons - 1, Math.floor(progress * numLessons / 100)) : 0;
     const currentLessonTitleWhileLoading = currentCurriculum?.content?.lessons?.[currentGeneratingLessonIndex] ?? '';
-    
+
     const isIncomplete = !isGenerating && lessonPlans?.some(plan => plan === null);
+
+    const hasCurriculum = !!currentCurriculum;
+    const hasDebugContext = !!debugSnapshot?.input?.topic;
+    const shouldShowHeader = (view !== 'idle' || lessonPlans || hasDebugContext) && (hasCurriculum || hasDebugContext);
+    const headerCurriculum: Curriculum | null = currentCurriculum ?? (hasDebugContext
+        ? {
+            title: debugSnapshot.input?.topic ?? 'Pending Generation',
+            description: '',
+            modules: [],
+            tags: [],
+            learningOutcomes: [],
+            recommended: false,
+            content: { lessons: [], capstoneProjects: [] },
+        }
+        : null);
 
     return (
         <div className="w-full lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[556px] relative" ref={viewerRef}>
@@ -188,10 +206,10 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
                     <p className="text-sm text-slate-500">Your generated content will appear here.</p>
                 </div>
             )}
-            {(view !== 'idle' || lessonPlans) && currentCurriculum && (
+            {shouldShowHeader && headerCurriculum && (
                 <div className="w-full">
                     <PreviewHeader
-                        curriculum={currentCurriculum}
+                        curriculum={headerCurriculum}
                         generationOptions={generationOptions}
                         generationDate={generationDate}
                         onRegenerateRequest={openRegenPopover}
@@ -200,114 +218,117 @@ export const LessonPlanViewer: React.FC<LessonPlanViewerProps> = ({
                         saveButtonRef={saveButtonRef}
                         onDeleteClick={() => {}}
                         deleteButtonRef={React.createRef<HTMLButtonElement>()}
-                        showSaveButton={true}
+                        showSaveButton={hasCurriculum}
                         showDeleteButton={false}
-                        onUpdateCurriculumTitle={onUpdateCurriculumTitle}
-                        saveButtonDisabled={view === 'loading' || isEditing || isIncomplete}
+                        onUpdateCurriculumTitle={hasCurriculum ? onUpdateCurriculumTitle : undefined}
+                        saveButtonDisabled={view === 'loading' || isEditing || isIncomplete || !hasCurriculum}
                         showDuplicateButton={false}
                         onDuplicateAndVaryClick={() => handleOpenDuplicateModal(currentLessonIndex)}
                         isEditing={isEditing}
-                        showEditButton={!!lessonPlans?.[currentLessonIndex]}
+                        showEditButton={hasCurriculum && !!lessonPlans?.[currentLessonIndex]}
                         onEditClick={() => setIsEditing(true)}
                         editedCurriculumTitle={editedCurriculumTitle}
                         onCurriculumTitleChange={setEditedCurriculumTitle}
-                        onDiscard={onDiscard}
+                        onDiscard={hasCurriculum ? onDiscard : undefined}
                         lessonPlans={lessonPlans}
                         showDebugButton={!!onOpenDebug}
                         onOpenDebug={onOpenDebug}
                     />
-                    
-                    <Collapsible
-                        title={<div className="flex items-center gap-2 font-semibold text-slate-700"><Target className="w-5 h-5 text-primary" />Andragogical Analysis</div>}
-                        containerClassName="border rounded-lg border-slate-200 mb-6 bg-slate-50/50"
-                        headerClassName="w-full flex justify-between items-center p-4 text-left hover:bg-slate-100/70 transition-colors"
-                        defaultOpen={false}
-                    >
-                        <AndragogyInfo analysis={andragogyAnalysis} isLoading={isAnalyzingAndragogy} />
-                    </Collapsible>
+                    {hasCurriculum && (
+                        <>
+                            <Collapsible
+                                title={<div className="flex items-center gap-2 font-semibold text-slate-700"><Target className="w-5 h-5 text-primary" />Andragogical Analysis</div>}
+                                containerClassName="border rounded-lg border-slate-200 mb-6 bg-slate-50/50"
+                                headerClassName="w-full flex justify-between items-center p-4 text-left hover:bg-slate-100/70 transition-colors"
+                                defaultOpen={false}
+                            >
+                                <AndragogyInfo analysis={andragogyAnalysis} isLoading={isAnalyzingAndragogy} />
+                            </Collapsible>
 
-                    <SaveContentPopover 
-                        isOpen={isSavePopoverOpen}
-                        onClose={() => setIsSavePopoverOpen(false)}
-                        onSave={handleSaveWithNotes}
-                        triggerRef={saveButtonRef}
-                    />
-                    
-                    {isIncomplete && onResume && (
-                        <div className="my-4 p-4 bg-orange-50 rounded-lg border border-orange-200 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
-                            <div className="flex items-center gap-2 text-sm text-orange-700">
-                                <Sparkles className="w-5 h-5" />
-                                <span className="font-semibold">Generation Paused.</span>
-                                <span>Some lessons are missing. Resume to complete.</span>
-                            </div>
-                            <Button onClick={onResume} icon={Rocket} size="small" className="w-full sm:w-auto">
-                                Resume Generation
-                            </Button>
-                        </div>
-                    )}
-                    
-                    {isGenerating && (
-                        <div className="my-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-2 text-sm text-slate-500 flex-shrink min-w-0">
-                                    <Sparkles className="w-5 h-5 text-primary animate-pulse flex-shrink-0" />
-                                    <span className="font-semibold text-slate-700 flex-shrink-0">Generating:</span>
-                                    <span className="truncate" title={currentLessonTitleWhileLoading}>{currentLessonTitleWhileLoading}</span>
-                                </div>
-                                <div className="w-full max-w-xs flex items-center gap-3">
-                                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                                        <div
-                                            className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${progress}%` }}
-                                        ></div>
+                            <SaveContentPopover
+                                isOpen={isSavePopoverOpen}
+                                onClose={() => setIsSavePopoverOpen(false)}
+                                onSave={handleSaveWithNotes}
+                                triggerRef={saveButtonRef}
+                            />
+
+                            {isIncomplete && onResume && (
+                                <div className="my-4 p-4 bg-orange-50 rounded-lg border border-orange-200 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fadeIn">
+                                    <div className="flex items-center gap-2 text-sm text-orange-700">
+                                        <Sparkles className="w-5 h-5" />
+                                        <span className="font-semibold">Generation Paused.</span>
+                                        <span>Some lessons are missing. Resume to complete.</span>
                                     </div>
-                                    {onCancel && (
-                                        <Button variant="danger-secondary" size="xs" onClick={onCancel}>
-                                            Cancel
-                                        </Button>
-                                    )}
+                                    <Button onClick={onResume} icon={Rocket} size="small" className="w-full sm:w-auto">
+                                        Resume Generation
+                                    </Button>
                                 </div>
+                            )}
+
+                            {isGenerating && (
+                                <div className="my-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-2 text-sm text-slate-500 flex-shrink min-w-0">
+                                            <Sparkles className="w-5 h-5 text-primary animate-pulse flex-shrink-0" />
+                                            <span className="font-semibold text-slate-700 flex-shrink-0">Generating:</span>
+                                            <span className="truncate" title={currentLessonTitleWhileLoading}>{currentLessonTitleWhileLoading}</span>
+                                        </div>
+                                        <div className="w-full max-w-xs flex items-center gap-3">
+                                            <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                                <div
+                                                    className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out"
+                                                    style={{ width: `${progress}%` }}
+                                                ></div>
+                                            </div>
+                                            {onCancel && (
+                                                <Button variant="danger-secondary" size="xs" onClick={onCancel}>
+                                                    Cancel
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {numLessons > 1 && (
+                                <LessonNavigator
+                                    currentLessonIndex={currentLessonIndex}
+                                    totalLessons={numLessons}
+                                    lessonTitle={editedLessonTitle}
+                                    onIndexChange={handleIndexChange}
+                                    className="my-4"
+                                />
+                            )}
+
+                            <div className="relative">
+                                <EditableLesson
+                                    key={currentLessonIndex}
+                                    lessonPlan={lessonPlans?.[currentLessonIndex] ?? null}
+                                    onRegenerate={openRegenPopover}
+                                    onGenerateNewPart={handleGenerateNewPartForCurrentLesson}
+                                    regeneratingPart={regeneratingPart}
+                                    openPopoverPartId={regenPopover.partId}
+                                    animationDirection={animationDirection}
+                                    totalLessons={numLessons}
+                                    onDuplicateAndVary={() => {}} // Now handled by header
+                                    isEditing={isEditing}
+                                    editedLessonPlan={editedLessonPlan}
+                                    onPlanChange={setEditedLessonPlan}
+                                    editedLessonTitle={editedLessonTitle}
+                                    onTitleChange={setEditedLessonTitle}
+                                    currentLessonIndex={currentLessonIndex}
+                                />
+                                 <RegeneratePopover
+                                    isOpen={regenPopover.open}
+                                    onClose={() => setRegenPopover({ open: false, part: null, partId: null, ref: null })}
+                                    triggerRef={regenPopover.ref!}
+                                    onRegenerate={handleRegenerate}
+                                    isLoading={regeneratingPart === regenPopover.partId}
+                                />
                             </div>
-                        </div>
+                             {isEditing && <EditModeFooter onSave={handleSave} onCancel={handleCancel} />}
+                        </>
                     )}
-
-                    {numLessons > 1 && (
-                        <LessonNavigator
-                            currentLessonIndex={currentLessonIndex}
-                            totalLessons={numLessons}
-                            lessonTitle={editedLessonTitle}
-                            onIndexChange={handleIndexChange}
-                            className="my-4"
-                        />
-                    )}
-
-                    <div className="relative">
-                        <EditableLesson
-                            key={currentLessonIndex}
-                            lessonPlan={lessonPlans?.[currentLessonIndex] ?? null}
-                            onRegenerate={openRegenPopover}
-                            onGenerateNewPart={handleGenerateNewPartForCurrentLesson}
-                            regeneratingPart={regeneratingPart}
-                            openPopoverPartId={regenPopover.partId}
-                            animationDirection={animationDirection}
-                            totalLessons={numLessons}
-                            onDuplicateAndVary={() => {}} // Now handled by header
-                            isEditing={isEditing}
-                            editedLessonPlan={editedLessonPlan}
-                            onPlanChange={setEditedLessonPlan}
-                            editedLessonTitle={editedLessonTitle}
-                            onTitleChange={setEditedLessonTitle}
-                            currentLessonIndex={currentLessonIndex}
-                        />
-                         <RegeneratePopover
-                            isOpen={regenPopover.open}
-                            onClose={() => setRegenPopover({ open: false, part: null, partId: null, ref: null })}
-                            triggerRef={regenPopover.ref!}
-                            onRegenerate={handleRegenerate}
-                            isLoading={regeneratingPart === regenPopover.partId}
-                        />
-                    </div>
-                     {isEditing && <EditModeFooter onSave={handleSave} onCancel={handleCancel} />}
                 </div>
             )}
             <DuplicateAndVaryModal

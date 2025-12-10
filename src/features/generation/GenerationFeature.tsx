@@ -28,7 +28,7 @@ const GenerationFeature: React.FC = () => {
     } = hookValues;
     const { startGenerationWithPrompt, setStartGenerationWithPrompt } = useCurriculumStore();
     const [isDebugOpen, setIsDebugOpen] = useState(false);
-    const [debugSnapshot, setDebugSnapshot] = useState<OrchestratorDebugSnapshot | null>(null);
+    const [debugSnapshot, setDebugSnapshot] = useState<OrchestratorDebugSnapshot | null>(getLastOrchestratorDebug());
     const [isComparing, setIsComparing] = useState(false);
 
     useEffect(() => {
@@ -37,6 +37,10 @@ const GenerationFeature: React.FC = () => {
             setStartGenerationWithPrompt(null);
         }
     }, [startGenerationWithPrompt, setStartGenerationWithPrompt, handleGenerate]);
+
+    useEffect(() => {
+        setDebugSnapshot(getLastOrchestratorDebug());
+    }, [view]);
 
     const openDebugPanel = () => {
         setDebugSnapshot(getLastOrchestratorDebug());
@@ -116,6 +120,7 @@ const GenerationFeature: React.FC = () => {
                             progress={hookValues.lessonGenerationProgress}
                             lessonPlans={hookValues.lessonPlans}
                             currentCurriculum={hookValues.generatedCurriculum}
+                            debugSnapshot={debugSnapshot}
                             generationOptions={hookValues.lastGenOptions}
                             generationDate={hookValues.generationDate}
                             regeneratingPart={hookValues.regeneratingPart}

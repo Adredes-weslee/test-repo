@@ -128,8 +128,26 @@ class DiscoveryService {
     files: FileData[],
     onProgress: (progress: number) => void
   ): Promise<GenerateCurriculumResponse> {
+    const baseDebugSnapshot = {
+      enabled: isOrchestratorEnabled,
+      input: { topic, filters, filesCount: files?.length ?? 0, files },
+    };
+
+    setLastOrchestratorDebug(baseDebugSnapshot);
+
     if (!isOrchestratorEnabled) {
-      return generateCurriculum(topic, filters, files, onProgress);
+      return generateCurriculum(topic, filters, files, onProgress)
+        .then(response => {
+          const curriculum = response.curriculums.find(c => c.recommended) || response.curriculums[0];
+          mergeLastOrchestratorDebug({
+            orchestratorOrFinalGeneration: curriculum,
+          });
+          return response;
+        })
+        .catch(error => {
+          mergeLastOrchestratorDebug(baseDebugSnapshot);
+          throw error;
+        });
     }
 
     const progressInterval = simulateProgress(appConfig.SIMULATED_PROGRESS_DURATIONS.discovery, onProgress);
@@ -226,9 +244,9 @@ class DiscoveryService {
         }
 
         setLastOrchestratorDebug({
+          ...baseDebugSnapshot,
           enabled: true,
           orchestrationId,
-          input: { topic, filters, filesCount: files?.length ?? 0, files },
         });
 
         const startTime = Date.now();
@@ -257,6 +275,7 @@ class DiscoveryService {
       } catch (error) {
         clearInterval(progressInterval);
         onProgress(0);
+        mergeLastOrchestratorDebug(baseDebugSnapshot);
         throw error;
       }
     })();
