@@ -117,11 +117,12 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
             onClick={handleBackdropClick}
         >
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-auto border border-slate-200">
-                
+
                 {/* Sticky header so Close never disappears */}
-                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur flex items-center justify-between p-4 border-b border-slate-200">
-                    <div>
+                <div className="sticky top-0 z-20 bg-white/95 backdrop-blur flex items-center justify-between p-4 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
                         <h2 className="text-lg font-semibold text-slate-800">Generation Debug</h2>
+                        <span className="ml-2 text-[10px] text-slate-400">debug-ui v2</span>
                         {snapshot?.updatedAt && (
                             <p className="text-xs text-slate-500">
                                 Updated: {new Date(snapshot.updatedAt).toLocaleString()}
@@ -335,3 +336,5 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
         </div>
     );
 };
+
+export default GenerationDebugPanel;
