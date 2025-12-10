@@ -2,6 +2,17 @@ import React, { useEffect } from 'react';
 import { Button } from '../ui';
 import type { OrchestratorDebugSnapshot } from '../../services/orchestratorDebugStore';
 
+type AgentTask = {
+    id: string;
+    runId: string;
+    status: string;
+    description?: string;
+    agent?: string;
+    result?: unknown;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
 type GenerationDebugPanelProps = {
     isOpen: boolean;
     onClose: () => void;
@@ -11,6 +22,9 @@ type GenerationDebugPanelProps = {
 };
 
 const formatJson = (data: any) => data === undefined ? 'N/A' : JSON.stringify(data, null, 2);
+
+const getTaskLabel = (task?: Partial<AgentTask>) =>
+    task?.description ?? task?.agent ?? task?.id ?? 'Unknown';
 
 const extractCurriculums = (payload: any): any[] => {
     if (!payload) return [];
@@ -232,7 +246,8 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                                     const duration = task?.durationMs ?? task?.duration ?? task?.elapsedMs;
                                     return (
                                         <div key={task?.id ?? idx} className="border border-slate-200 rounded p-2 text-xs bg-slate-50">
-                                            <p><span className="font-semibold">Name:</span> {task?.name || task?.taskName || task?.type || 'Unknown'}</p>
+                                            <p><span className="font-semibold">Name:</span> {getTaskLabel(task)}</p>
+                                            {task?.agent && <p className="text-[11px] text-slate-500">Agent: {task.agent}</p>}
                                             <p><span className="font-semibold">Status:</span> {task?.status ?? 'N/A'}</p>
                                             {duration !== undefined && <p><span className="font-semibold">Duration:</span> {duration} ms</p>}
                                             {task?.error && <p className="text-red-600"><span className="font-semibold">Error:</span> {typeof task.error === 'string' ? task.error : JSON.stringify(task.error)}</p>}
@@ -255,6 +270,9 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                     {snapshot?.feedback && (
                         <div className="p-3 rounded border border-slate-200 bg-white">
                             <p className="font-semibold mb-2">Feedback (read-only)</p>
+                            {(snapshot?.feedback?.feedback ?? []).length === 0 && (
+                                <p className="text-xs text-slate-500 mb-2">No feedback submitted for this run yet.</p>
+                            )}
                             <pre className="bg-slate-900 text-slate-100 p-3 text-xs overflow-auto max-h-60">
                                 {formatJson(snapshot.feedback)}
                             </pre>
