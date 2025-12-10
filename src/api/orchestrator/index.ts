@@ -30,10 +30,6 @@ export interface OrchestrationRun {
   error?: EnvelopeError;
 }
 
-interface OrchestrationLogs {
-  logs: string[];
-}
-
 interface OrchestrationStartResponse {
   id?: string;
   runId?: string;
@@ -41,8 +37,13 @@ interface OrchestrationStartResponse {
 
 const buildUrl = (path: string) => `${orchestratorBaseUrl}${path}`;
 
-const handleOrchestratorResponse = async <T>(response: Response): Promise<T> => {
+const handleOrchestratorResponse = async <T>(
+  response: Response,
+  options: { requireData?: boolean } = {}
+): Promise<T> => {
   let body: any = null;
+
+  const { requireData = true } = options;
 
   try {
     body = await response.json();
@@ -59,11 +60,31 @@ const handleOrchestratorResponse = async <T>(response: Response): Promise<T> => 
     throw new Error(body.error.message || 'Orchestrator request failed');
   }
 
-  if (body?.data === undefined) {
+  if (requireData && body?.data === undefined) {
     throw new Error('Missing data in orchestrator response');
   }
 
-  return body.data as T;
+  return (requireData ? body?.data : body) as T;
+};
+
+const unwrapTasks = (body: any): any[] => body?.data?.tasks ?? body?.tasks ?? [];
+
+const unwrapLogs = (body: any): any[] => {
+  const logs =
+    body?.data?.events ??
+    body?.data?.logs ??
+    body?.data ??
+    body?.logs ??
+    body?.events ??
+    [];
+
+  return Array.isArray(logs) ? logs : [];
+};
+
+const unwrapFeedback = (body: any): { feedback: any[] } => {
+  const feedback = body?.data?.feedback ?? body?.feedback ?? [];
+
+  return { feedback: Array.isArray(feedback) ? feedback : [] };
 };
 
 export const startOrchestration = async (payload: CourseOrchestrationPayload): Promise<OrchestrationStartResponse> => {
@@ -85,28 +106,30 @@ export const getOrchestrationStatus = async (runId: string): Promise<Orchestrati
   return (data as any).run ?? data;
 };
 
-export const getOrchestrationLogs = async (runId: string): Promise<OrchestrationLogs> => {
+export const getOrchestrationLogs = async (runId: string): Promise<any[]> => {
   const response = await fetch(buildUrl(`/orchestrations/${runId}/logs`));
 
-  return handleOrchestratorResponse<OrchestrationLogs>(response);
+  return unwrapLogs(await handleOrchestratorResponse<any>(response, { requireData: false }));
 };
 
 export const getOrchestrationTasks = async (runId: string): Promise<any[]> => {
   const response = await fetch(buildUrl(`/orchestrations/${runId}/tasks`));
 
-  return handleOrchestratorResponse<any[]>(response);
+  return unwrapTasks(await handleOrchestratorResponse<any>(response, { requireData: false }));
 };
 
 export const getOrchestrationLogsCompact = async (runId: string): Promise<any[]> => {
   const response = await fetch(buildUrl(`/orchestrations/${runId}/logs/compact`));
 
-  return handleOrchestratorResponse<any[]>(response);
+  return unwrapLogs(await handleOrchestratorResponse<any>(response, { requireData: false }));
 };
 
 export const getHealth = async (): Promise<{ simulationMode?: boolean }> => {
   const response = await fetch(buildUrl('/health'));
 
-  return handleOrchestratorResponse<{ simulationMode?: boolean }>(response);
+  const body = await handleOrchestratorResponse<any>(response, { requireData: false });
+
+  return { simulationMode: body?.simulationMode ?? body?.data?.simulationMode };
 };
 
 export const getAdminQueue = async (): Promise<any> => {
@@ -124,5 +147,5 @@ export const getAdminTasks = async (): Promise<any> => {
 export const getOrchestrationFeedback = async (runId: string): Promise<any> => {
   const response = await fetch(buildUrl(`/orchestrations/${runId}/feedback`));
 
-  return handleOrchestratorResponse<any>(response);
+  return unwrapFeedback(await handleOrchestratorResponse<any>(response, { requireData: false }));
 };
