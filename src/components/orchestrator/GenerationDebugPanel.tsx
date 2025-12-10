@@ -93,6 +93,10 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
     const logLines = compactLogs.length > 0 ? compactLogs : fallbackLogs;
     const validation = stagedOutputs?.validation ?? {};
     const validationHasSummary = validation?.pass !== undefined || validation?.andragogyScore !== undefined || validation?.pedagogyScore !== undefined || validation?.reasons !== undefined;
+    const feedbackList =
+        (snapshot as any)?.feedback?.feedback ??
+        (snapshot as any)?.feedback ??
+        [];
 
     const renderMode = () => {
         if (snapshot?.mode && snapshot.mode !== 'unknown') return snapshot.mode;
@@ -270,7 +274,7 @@ export const GenerationDebugPanel: React.FC<GenerationDebugPanelProps> = ({
                     {snapshot?.feedback && (
                         <div className="p-3 rounded border border-slate-200 bg-white">
                             <p className="font-semibold mb-2">Feedback (read-only)</p>
-                            {(snapshot?.feedback?.feedback ?? []).length === 0 && (
+                            {Array.isArray(feedbackList) && feedbackList.length === 0 && (
                                 <p className="text-xs text-slate-500 mb-2">No feedback submitted for this run yet.</p>
                             )}
                             <pre className="bg-slate-900 text-slate-100 p-3 text-xs overflow-auto max-h-60">
