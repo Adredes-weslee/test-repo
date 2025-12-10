@@ -41,7 +41,7 @@ export const buildPrompt = (task: AgentTask, goal: string): string => {
 let cachedGuidelines: string | null = null;
 
 export const loadAndragogyGuidelinesExcerpt = async (
-  maxChars = 4000
+  maxChars = 20000
 ): Promise<string> => {
   if (cachedGuidelines) return cachedGuidelines;
 
