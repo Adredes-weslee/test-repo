@@ -1,3 +1,5 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { AgentTask } from '../orchestrator/types';
 import { orchestratorStore } from '../orchestrator/store';
 
@@ -34,6 +36,36 @@ export const buildPrompt = (task: AgentTask, goal: string): string => {
     'Stay on the requested topic throughout. Curriculum and module titles must clearly reflect the topic.',
     'Return valid JSON only.',
   ].join('\n');
+};
+
+let cachedGuidelines: string | null = null;
+
+export const loadAndragogyGuidelinesExcerpt = async (
+  maxChars = 4000
+): Promise<string> => {
+  if (cachedGuidelines) return cachedGuidelines;
+
+  const fallback =
+    'Apply constructive alignment, authentic practice, guided participation, feedback, judgement, future-oriented transfer, and accessibility principles.';
+
+  const tryPaths = [
+    path.resolve(process.cwd(), 'ANDRAGOGY_GUIDELINES.md'),
+    path.resolve(__dirname, '../../../ANDRAGOGY_GUIDELINES.md'),
+  ];
+
+  for (const p of tryPaths) {
+    try {
+      const raw = await fs.readFile(p, 'utf8');
+      const excerpt = raw.slice(0, maxChars);
+      cachedGuidelines = excerpt;
+      return excerpt;
+    } catch {
+      // continue to next path
+    }
+  }
+
+  cachedGuidelines = fallback;
+  return fallback;
 };
 
 export const loadGeminiModel = async (): Promise<GeminiModel | null> => {

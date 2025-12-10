@@ -187,6 +187,7 @@ class DiscoveryService {
 
         const outputs = {
           discovery: (runDetails?.output as any)?.discovery,
+          strategySelection: (runDetails?.output as any)?.strategySelection,
           generation: (runDetails?.output as any)?.generation,
           validation: (runDetails?.output as any)?.validation,
         };

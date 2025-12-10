@@ -16,7 +16,12 @@ type OrchestratorDebugSnapshot = {
   tasks?: any[];
   logs?: any[];
   logsCompact?: any[];
-  outputs?: { discovery?: any; generation?: any; validation?: any };
+  outputs?: {
+    discovery?: any;
+    strategySelection?: any;
+    generation?: any;
+    validation?: any;
+  };
   mode?: 'simulation' | 'live' | 'unknown';
   queue?: any[];
   adminTasks?: any[];

@@ -139,6 +139,7 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
     const discoveryTask = inProcessQueue.enqueue({
       runId: run.id,
       agent: 'discovery',
+      displayName: 'Discovery',
       description: 'Perform discovery to understand learner needs.',
     });
 
@@ -150,6 +151,7 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
     const strategySelectionTask = inProcessQueue.enqueue({
       runId: run.id,
       agent: 'strategy-selection',
+      displayName: 'Strategy Selection',
       description: buildStrategySelectionDescription(discoveryCompleted.result),
     });
 
@@ -161,6 +163,7 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
     const generationTask = inProcessQueue.enqueue({
       runId: run.id,
       agent: 'generation',
+      displayName: 'Generation',
       description: buildGenerationDescription(
         discoveryCompleted.result,
         strategySelectionCompleted.result
@@ -175,6 +178,7 @@ const runWorkflow = async (runId: string): Promise<AgentRun | undefined> => {
     const validationTask = inProcessQueue.enqueue({
       runId: run.id,
       agent: 'validation',
+      displayName: 'Validation',
       description: buildValidationDescription(generationCompleted.result),
     });
 

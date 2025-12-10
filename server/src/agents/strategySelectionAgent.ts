@@ -1,7 +1,13 @@
 import strategySelectionFixture from '../simulations/data/strategySelection.json';
 import { AgentTask, StrategyBundle, StrategySelectionResult } from '../orchestrator/types';
 import { orchestratorStore } from '../orchestrator/store';
-import { buildPrompt, isSimulationMode, loadGeminiModel, parseModelText } from './utils';
+import {
+  buildPrompt,
+  isSimulationMode,
+  loadAndragogyGuidelinesExcerpt,
+  loadGeminiModel,
+  parseModelText,
+} from './utils';
 
 const goal =
   'Select the best learning design strategy bundles from the taxonomy based on the discovery output. Respond with JSON containing strategyBundles (array), rationales (array), confidence.';
@@ -60,10 +66,15 @@ const runLive = async (task: AgentTask): Promise<StrategySelectionResult> => {
   const model = await loadGeminiModel();
   if (!model) return runSimulation(task);
 
+  const guidelines = await loadAndragogyGuidelinesExcerpt();
   const prompt = [
     buildPrompt(task, goal),
-    'Use ANDRAGOGY_GUIDELINES.md as the primary reference. Return JSON only.',
+    'You MUST ground your selection in the guidelines below.',
+    '--- ANDRAGOGY_GUIDELINES (excerpt) ---',
+    guidelines,
+    '--- END GUIDELINES ---',
     `Allowed bundles: ${allowedBundles.join(', ')}.`,
+    'Return JSON only.',
   ].join('\n');
 
   try {
