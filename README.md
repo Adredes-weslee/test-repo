@@ -18,12 +18,12 @@ View your app in AI Studio: https://ai.studio/apps/drive/1i-GzGeMYjn1TKjLP6SH6ya
 2. Create your environment files from the examples
 
    ```bash
-   cp .env.example .env
+   cp server/.env.example server/.env
    cp .env.local.example .env.local
    ```
 3. Configure your environment variables
 
-   * In `.env`:
+   * In `server.env`:
 
      * Set `GEMINI_API_KEY=<your-gemini-api-key>`
      * Adjust `SIMULATION_MODE` and `PORT` if needed (defaults: `SIMULATION_MODE=false`, `PORT=4000`)
